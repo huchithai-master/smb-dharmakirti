@@ -221,7 +221,7 @@ export async function formPengguna(el, { params, ctx }) {
           <div class="grid2" style="gap:8px">
             <div class="field"><label class="sr-only" for="k-${s.id}">Kelas slot ${esc(s.nama)}</label>
               <select class="input" id="k-${s.id}" data-slot-kelas="${s.id}"><option value="">Tidak mengajar</option>
-              ${kelas.map((k) => `<option value="${k.id}" ${t?.kelas_id === k.id ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select></div>
+              ${kelas.filter((k) => !k.slot_ids?.length || k.slot_ids.includes(s.id)).map((k) => `<option value="${k.id}" ${t?.kelas_id === k.id ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select></div>
             <div class="field"><label class="sr-only" for="p-${s.id}">Peran slot ${esc(s.nama)}</label>
               <select class="input" id="p-${s.id}" data-slot-peran="${s.id}">
                 <option value="guru" ${(t?.peran ?? st.level) === 'guru' ? 'selected' : ''}>Pembina</option>
@@ -331,35 +331,61 @@ export async function formPengguna(el, { params, ctx }) {
 }
 
 export async function kelas(el, { ctx }) {
-  const { kelas: daftar } = await api('/api/admin/kelas');
+  const { kelas: daftar, slot: slots } = await api('/api/admin/kelas');
+  const jamSlot = (s) => `${NAMA_HARI[s.hari]} ${fmtJam(s.jam_mulai)}–${fmtJam(s.jam_selesai)}`;
+  const pilihSesi = (terpilih, idAwal) => slots.length
+    ? `<div class="tumpuk" style="gap:8px">
+        <span class="label">Masuk sesi</span>
+        <div class="grid2" style="gap:8px">
+          ${slots.map((s) => `<label class="cek" style="margin:0">
+            <input type="checkbox" name="slot" value="${s.id}" ${terpilih.includes(s.id) ? 'checked' : ''}>
+            <span class="tumpuk"><span class="tebal">${esc(s.nama)}</span><span class="kecil muted">${esc(jamSlot(s))}</span></span>
+          </label>`).join('')}
+        </div>
+      </div>`
+    : `<div class="info info-oranye">${ikon.info()}<span>Belum ada sesi (pagi/siang). Buat dulu di <a href="#/admin/slot"><b>Slot &amp; Mode Absen</b></a>, lalu pilih sesi untuk tiap kelas.</span></div>`;
+
   el.innerHTML = `
     ${hdrKembali('Kelas', '#/admin/lainnya')}
     <div class="isi">
+      <div class="info info-abu">${ikon.info()}<span>Pilih kelas ini masuk sesi <b>pagi</b>, <b>siang</b>, atau keduanya. Kelas hanya muncul di jadwal sesi yang dipilih.</span></div>
       ${daftar.map((k) => `
-        <form class="kartu rapat" data-kelas="${k.id}" style="flex-direction:row;align-items:center">
-          <label class="sr-only" for="kelas-${k.id}">Nama kelas</label>
-          <input class="input" id="kelas-${k.id}" value="${esc(k.nama)}" maxlength="40" style="flex:1">
-          <button class="btn btn-netral btn-kecil" style="width:auto" type="submit">Simpan</button>
+        <form class="kartu" data-kelas="${k.id}">
+          <div class="field"><label for="kelas-${k.id}">Nama kelas</label>
+            <input class="input" id="kelas-${k.id}" name="nama" value="${esc(k.nama)}" maxlength="40"></div>
+          ${pilihSesi(k.slot_ids)}
+          ${slots.length && !k.slot_ids.length ? `<span class="kecil" style="color:var(--oranye)">Belum dipilih: kelas ini sementara tampil di semua sesi.</span>` : ''}
+          <button class="btn btn-netral btn-kecil" type="submit">Simpan</button>
         </form>`).join('')}
-      <form class="kartu" id="tambah">
-        <div class="field"><label for="baru">Tambah kelas baru</label><input class="input" id="baru" maxlength="40" placeholder="Contoh: Pra-Remaja"></div>
-        <button class="btn btn-garis btn-kecil" type="submit">${ikon.tambah(18)} Tambah kelas</button>
+      <form class="kartu" id="tambah" style="border-style:dashed">
+        <span class="label-kecil">Tambah kelas baru</span>
+        <div class="field"><label for="baru">Nama kelas</label><input class="input" id="baru" name="nama" maxlength="40" placeholder="Contoh: Pra-Remaja"></div>
+        ${pilihSesi([])}
+        <button class="btn btn-utama btn-kecil" type="submit">${ikon.tambah(18)} Tambah kelas</button>
       </form>
     </div>`;
+
+  const bacaForm = (f) => ({
+    nama: f.querySelector('input[name="nama"]').value,
+    slot_ids: [...f.querySelectorAll('input[name="slot"]:checked')].map((c) => Number(c.value)),
+  });
   el.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = e.target;
+    const tombol = f.querySelector('button[type="submit"]');
+    tombol.disabled = true;
     try {
       if (f.id === 'tambah') {
-        await api('/api/admin/kelas', { method: 'POST', body: { nama: f.querySelector('#baru').value } });
+        await api('/api/admin/kelas', { method: 'POST', body: bacaForm(f) });
         toast('Kelas ditambahkan.');
-        ctx.muatUlang();
       } else {
-        await api(`/api/admin/kelas/${f.dataset.kelas}`, { method: 'PUT', body: { nama: f.querySelector('input').value } });
-        toast('Nama kelas disimpan.');
+        await api(`/api/admin/kelas/${f.dataset.kelas}`, { method: 'PUT', body: bacaForm(f) });
+        toast('Kelas disimpan.');
       }
+      ctx.muatUlang();
     } catch (err) {
       toast(err.message, 'galat');
+      tombol.disabled = false;
     }
   });
 }

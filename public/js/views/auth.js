@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { esc, ikon } from '../ui.js';
+import { esc, ikon, logoImg } from '../ui.js';
 
 const kolomPin = (id, label, autocomplete) => `
   <div class="field">
@@ -11,7 +11,7 @@ const kolomPin = (id, label, autocomplete) => `
 export async function login(el, { ctx }) {
   el.innerHTML = `
     <div class="hdr login-hdr">
-      <div class="logo">${ikon.teratai(32)}</div>
+      <div class="logo">${logoImg(88)}</div>
       <div class="tumpuk" style="gap:6px">
         <h1>SMB Dharmakirti</h1>
         <span class="sub">Absensi pengajar ${esc(ctx.vihara)}</span>
@@ -67,14 +67,14 @@ export async function aktivasi(el, { ctx, query }) {
     info = await api(`/api/aktivasi/${encodeURIComponent(kode)}`);
   } catch (e) {
     el.innerHTML = `
-      <div class="hdr login-hdr"><div class="logo">${ikon.teratai(32)}</div><h1>Aktivasi Akun</h1></div>
+      <div class="hdr login-hdr"><div class="logo">${logoImg(88)}</div><h1>Aktivasi Akun</h1></div>
       <div class="isi angkat"><div class="kartu bayang"><div class="galat">${esc(e.message)}</div>
       <a class="btn btn-garis" href="#/login">Ke halaman masuk</a></div></div>`;
     return;
   }
   el.innerHTML = `
     <div class="hdr login-hdr">
-      <div class="logo">${ikon.teratai(32)}</div>
+      <div class="logo">${logoImg(88)}</div>
       <div class="tumpuk" style="gap:6px">
         <span class="sub">Namo Buddhaya,</span>
         <h1>${esc(info.nama)}</h1>

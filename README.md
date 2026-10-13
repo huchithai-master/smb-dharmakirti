@@ -48,6 +48,7 @@ Tanpa `DATABASE_URL`, data disimpan lokal di `data/pglite` (Postgres bawaan, tan
 ## Catatan
 
 - Semua jam memakai WIB (UTC+7) di server mana pun.
-- Aplikasi tidak membawa data contoh. Urutan mengisi data setelah login: kelas, slot (Pagi/Siang), pembina dan asisten, lalu murid.
+- Aplikasi tidak membawa data contoh. Urutan mengisi data setelah login: slot (Pagi/Siang), kelas (pilih masuk sesi pagi, siang, atau keduanya), pembina dan asisten, lalu murid.
+- Skema baru dibuat otomatis bila tabel `kelas_slot` belum ada; untuk database yang sudah berjalan, tabel itu juga bisa dibuat dari `sql/schema.sql`.
 - Region fungsi diatur ke `icn1` (Seoul) di `vercel.json`, dekat dengan database. Ubah bila project Supabase Anda di region lain.
 - Supabase free plan menjeda project yang tidak aktif selama seminggu.

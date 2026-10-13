@@ -292,7 +292,10 @@ select.input { padding-right: 8px; }
 
 /* ---------- Login ---------- */
 .login-hdr { padding: 48px 24px 72px; align-items: flex-start; }
-.login-hdr .logo { width: 56px; height: 56px; border-radius: 16px; background: rgba(255, 255, 255, 0.16); display: flex; align-items: center; justify-content: center; }
+.login-hdr .logo { width: auto; height: auto; border-radius: 0; background: none; display: flex; align-items: center; justify-content: center; }
+.logo-img { display: block; flex: 0 0 auto; }
+.logo-kop { height: 28mm; width: auto; flex: 0 0 auto; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.rekap .logo-kop { height: 22mm; }
 .login-hdr h1 { font-size: 26px; }
 
 /* ---------- Scan ---------- */
@@ -345,7 +348,7 @@ select.input { padding-right: 8px; }
 .surat p { margin: 0 0 10pt; }
 .surat .kanan { text-align: right; }
 .kop { display: flex; align-items: center; gap: 16px; padding-bottom: 8pt; border-bottom: 3px double #111; margin-bottom: 14pt; }
-.kop svg { flex: 0 0 auto; }
+.kop svg, .kop img { flex: 0 0 auto; }
 .kop-teks { flex: 1; text-align: center; font-size: 10.5pt; line-height: 1.35; }
 .kop-nama { font-size: 16pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #0369a1; }
 .kop-vihara { font-size: 12.5pt; font-weight: 700; }
