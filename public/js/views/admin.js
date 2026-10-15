@@ -29,7 +29,7 @@ export async function dashboard(el, { query, ctx }) {
   el.innerHTML = `
     <div class="hdr" style="padding-bottom:60px">
       <div class="hdr-atas">
-        <div class="merek">${ikon.teratai()} SMB Dharmakirti <span class="lencana">Admin</span></div>
+        <div class="merek"><img class="merek-logo" src="/icons/logo-smb.png" alt="" width="26" height="31"> SMB Dharmakirti <span class="lencana">Admin</span></div>
         <a class="btn-ikon-terang" href="#/petugas" aria-label="Buka layar Petugas QR">${ikon.qr()}</a>
       </div>
       <div class="baris-antara" style="align-items:flex-end">

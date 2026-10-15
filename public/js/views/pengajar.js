@@ -76,7 +76,7 @@ export async function beranda(el, { ctx }) {
   el.innerHTML = `
     <div class="hdr">
       <div class="hdr-atas">
-        <div class="merek">${ikon.teratai()} SMB Dharmakirti</div>
+        <div class="merek"><img class="merek-logo" src="/icons/logo-smb.png" alt="" width="26" height="31"> SMB Dharmakirti</div>
         <a class="btn-ikon-terang" href="#/akun" aria-label="Akun saya">${ikon.orang()}</a>
       </div>
       <div class="sapaan">

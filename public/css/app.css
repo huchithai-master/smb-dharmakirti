@@ -67,6 +67,7 @@ h1, h2, h3 { margin: 0; }
 }
 .hdr-atas { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .merek { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; }
+.merek-logo { height: 31px; width: auto; flex: 0 0 auto; }
 .merek .lencana { font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.18); padding: 3px 8px; border-radius: 999px; }
 .hdr h1 { font-size: 22px; font-weight: 800; }
 .hdr .sub { font-size: 13px; opacity: 0.92; }
@@ -179,6 +180,17 @@ h1, h2, h3 { margin: 0; }
 }
 textarea.input { height: auto; padding: 12px 14px; resize: vertical; min-height: 84px; }
 select.input { padding-right: 8px; }
+/* iOS Safari: kolom tanggal/jam punya lebar bawaan sendiri sehingga bisa keluar dari kartu. Paksa mengikuti lebar kolom. */
+.field, .kartu { min-width: 0; }
+input.input[type="date"], input.input[type="month"], input.input[type="time"], input.input[type="datetime-local"] {
+  -webkit-appearance: none; appearance: none;
+  display: block; width: 100%; min-width: 0; max-width: 100%;
+  min-height: 46px; line-height: 1.2; text-align: left;
+}
+input.input[type="date"]::-webkit-date-and-time-value,
+input.input[type="month"]::-webkit-date-and-time-value,
+input.input[type="time"]::-webkit-date-and-time-value,
+input.input[type="datetime-local"]::-webkit-date-and-time-value { text-align: left; min-height: 1.2em; margin: 0; }
 .input:focus, .btn:focus-visible, .opsi:focus-visible, .seg button:focus-visible {
   outline: 3px solid rgba(3, 105, 161, 0.35); outline-offset: 1px; border-color: var(--utama);
 }
