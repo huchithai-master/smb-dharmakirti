@@ -131,7 +131,7 @@ export async function tugas(el, { query, ctx }) {
       </div>
     </div>
     <div class="isi">
-      <div class="grid2">
+      <div class="grid2 kolom-hp">
         <div class="field"><label for="tgl">Tanggal</label><input class="input" type="date" id="tgl" value="${d.tanggal}"></div>
         <div class="field"><label for="slot">Slot</label><select class="input" id="slot">
           ${d.slots.map((s) => `<option value="${s.id}" ${s.id === d.slot_id ? 'selected' : ''}>${esc(s.nama)} ${fmtJam(s.jam_mulai)}</option>`).join('') || '<option>Tidak ada sesi</option>'}
@@ -290,7 +290,7 @@ async function formPengganti(wadah, d, query, ctx) {
 
   wadah.innerHTML = `
     <div class="kartu">
-      <div class="grid2">
+      <div class="grid2 kolom-hp">
         <div class="field"><label for="kelas">Kelas</label><select class="input" id="kelas">
           ${d.kelas.map((k) => `<option value="${k.id}" ${k.id === kelasId ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select></div>
         <div class="field"><span class="label">Posisi</span><div class="seg" id="peran">

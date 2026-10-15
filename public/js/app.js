@@ -13,7 +13,6 @@ import * as siswa from './views/siswa.js';
 export const ctx = {
   me: null,
   waktu: null,
-  vihara: '',
   dimuat: 0,
   installPrompt: null,
   muatUlang: () => render(),
@@ -30,6 +29,8 @@ const RUTE = [
   { path: '/', view: pengajar.beranda, perlu: 'is_pengajar', nav: 'beranda' },
   { path: '/scan', view: scan.scan, perlu: 'is_pengajar', polos: true },
   { path: '/siswa', view: siswa.absenSiswa, perlu: 'is_pengajar', nav: 'beranda' },
+  { path: '/murid', view: siswa.muridPembina, perlu: 'is_pengajar', nav: 'murid' },
+  { path: '/murid/baru', view: siswa.formMuridPembina, perlu: 'is_pengajar', nav: 'murid' },
   { path: '/riwayat', view: pengajar.riwayat, perlu: 'is_pengajar', nav: 'riwayat' },
   { path: '/izin', view: pengajar.izin, perlu: 'is_pengajar', nav: 'izin' },
   { path: '/akun', view: pengajar.akun, perlu: 'login', nav: 'akun' },
@@ -44,6 +45,7 @@ const RUTE = [
   { path: '/admin/libur', view: siswa.libur, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/kelas', view: data.kelas, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/slot', view: data.slot, perlu: 'is_admin', nav: 'admin' },
+  { path: '/admin/waktu', view: data.waktu, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/honor', view: honor.honor, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/honor/pengaturan', view: honor.pengaturan, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/honor/cetak', view: honor.cetak, perlu: 'is_admin', polos: true, lebar: true },
@@ -74,7 +76,6 @@ async function muatMe() {
   const r = await api('/api/me');
   ctx.me = r.pengguna;
   ctx.waktu = r.waktu;
-  ctx.vihara = r.nama_vihara;
   ctx.dimuat = Date.now();
 }
 
@@ -88,6 +89,7 @@ function navBawah(aktif) {
   const item = [];
   if (m.is_pengajar) {
     item.push(['beranda', '#/', ikon.rumah(), 'Beranda']);
+    if (m.level === 'guru') item.push(['murid', '#/murid', ikon.orang2(), 'Data Murid']);
     item.push(['riwayat', '#/riwayat', ikon.jam(), 'Riwayat']);
     item.push(['izin', '#/izin', ikon.dokumen(), 'Izin']);
   }

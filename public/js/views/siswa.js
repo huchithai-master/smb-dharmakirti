@@ -158,17 +158,9 @@ export async function daftarMurid(el) {
   });
 }
 
-export async function formMurid(el, { params, ctx }) {
-  const baru = params.id === 'baru';
-  const r = baru ? { kelas: (await api('/api/admin/murid')).kelas, murid: null } : await api(`/api/admin/murid/${encodeURIComponent(params.id)}`);
-  const m = r.murid ?? {
-    nik: '', nama: '', kelas_id: r.kelas[0]?.id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', aktif: true,
-  };
-
-  el.innerHTML = `
-    ${hdrKembali(baru ? 'Tambah Murid' : 'Edit Data Murid', '#/admin/murid')}
-    <form class="isi" id="form" novalidate style="padding-bottom:0">
-      <div class="galat" id="galat" role="alert"></div>
+// Bidang isian murid, dipakai form admin dan form pembina.
+function bagianMurid(m, kelas) {
+  return `
       <section class="kartu">
         <span class="label-kecil">Data siswa</span>
         <div class="field"><label for="nik">NIK</label>
@@ -176,7 +168,7 @@ export async function formMurid(el, { params, ctx }) {
           <span class="kecil muted">Hanya angka, 16 digit.</span></div>
         <div class="field"><label for="nama">Nama lengkap siswa</label><input class="input" id="nama" maxlength="80" value="${esc(m.nama)}" required></div>
         <div class="field"><label for="kelas">Kelas</label>
-          <select class="input" id="kelas">${r.kelas.map((k) => `<option value="${k.id}" ${k.id === m.kelas_id ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select></div>
+          <select class="input" id="kelas">${kelas.map((k) => `<option value="${k.id}" ${k.id === m.kelas_id ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select></div>
         <div class="grid2">
           <div class="field"><label for="tempat">Tempat lahir</label><input class="input" id="tempat" maxlength="60" value="${esc(m.tempat_lahir)}" required></div>
           <div class="field"><label for="lahir">Tanggal lahir</label><input class="input" type="date" id="lahir" value="${esc(m.tanggal_lahir)}" required></div>
@@ -190,7 +182,21 @@ export async function formMurid(el, { params, ctx }) {
         <div class="field"><label for="ortu">Nama orang tua</label><input class="input" id="ortu" maxlength="80" value="${esc(m.nama_ortu)}" required></div>
         <div class="field"><label for="hportu">No. HP orang tua</label>
           <input class="input" id="hportu" type="tel" inputmode="tel" value="${esc(m.hp_ortu)}" placeholder="08xxxxxxxxxx" required></div>
-      </section>
+      </section>`;
+}
+
+export async function formMurid(el, { params, ctx }) {
+  const baru = params.id === 'baru';
+  const r = baru ? { kelas: (await api('/api/admin/murid')).kelas, murid: null } : await api(`/api/admin/murid/${encodeURIComponent(params.id)}`);
+  const m = r.murid ?? {
+    nik: '', nama: '', kelas_id: r.kelas[0]?.id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', aktif: true,
+  };
+
+  el.innerHTML = `
+    ${hdrKembali(baru ? 'Tambah Murid' : 'Edit Data Murid', '#/admin/murid')}
+    <form class="isi" id="form" novalidate style="padding-bottom:0">
+      <div class="galat" id="galat" role="alert"></div>
+      ${bagianMurid(m, r.kelas)}
       ${baru ? '' : `
       <section class="kartu">
         <label class="cek"><input type="checkbox" id="aktif" ${m.aktif ? 'checked' : ''}><span class="tumpuk"><span class="tebal">Siswa aktif</span><span class="kecil muted">Nonaktifkan bila sudah tidak mengikuti Sekolah Minggu. Riwayat absensi tetap tersimpan.</span></span></label>
@@ -217,6 +223,97 @@ export async function formMurid(el, { params, ctx }) {
       else await api(`/api/admin/murid/${m.id}`, { method: 'PUT', body });
       toast('Data murid tersimpan.');
       ctx.pergi('/admin/murid');
+    } catch (err) {
+      $('galat').textContent = err.message;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      tombol.disabled = false;
+    }
+  });
+}
+
+// ---- Pembina: data murid kelas yang diampu ----
+export async function muridPembina(el, { ctx }) {
+  if (ctx.me.level !== 'guru') return ctx.pergi('/');
+  const { murid, kelas } = await api('/api/pembina/murid');
+  let cari = '';
+  let filter = 0;
+  const aktifN = (id) => murid.filter((m) => m.aktif && (!id || m.kelas_id === id)).length;
+
+  el.innerHTML = `
+    <div class="hdr-putih">
+      <div class="baris"><h1>Data Murid</h1></div>
+      <div class="kecil muted" style="padding:0 4px">${kelas.length ? `Kelas ${esc(kelas.map((k) => k.nama).join(', '))} · ${aktifN(0)} murid aktif` : 'Anda belum ditugaskan sebagai pembina di kelas mana pun.'}</div>
+      ${murid.length ? `<div style="padding:0 4px"><label class="sr-only" for="cari">Cari</label>
+        <input class="input" id="cari" type="search" placeholder="Cari nama murid" style="background:#f7f8f9"></div>` : ''}
+      ${kelas.length > 1 ? `<div class="chips" id="filter" style="padding:0 4px">
+        <button data-k="0" aria-pressed="true">Semua (${murid.length})</button>
+        ${kelas.map((k) => `<button data-k="${k.id}" aria-pressed="false">${esc(k.nama)} (${murid.filter((m) => m.kelas_id === k.id).length})</button>`).join('')}
+      </div>` : ''}
+    </div>
+    <div class="isi" id="daftar" style="padding-bottom:96px"></div>
+    ${kelas.length ? `<a class="fab" href="#/murid/baru">${ikon.tambah()} Tambah</a>` : ''}`;
+
+  const daftar = el.querySelector('#daftar');
+  const tampil = () => {
+    const q = cari.toLowerCase();
+    const rows = murid.filter((m) => (!filter || m.kelas_id === filter) && (!q || m.nama.toLowerCase().includes(q)));
+    daftar.innerHTML = rows.length
+      ? rows.map((m) => `
+        <div class="item-link" style="${m.aktif ? '' : 'opacity:.6'}">
+          <span class="avatar kecil">${esc(inisial(m.nama))}</span>
+          <span class="tumpuk"><span class="tebal">${esc(m.nama)}</span>
+            <span class="kecil muted">${esc(m.asal_sekolah)} · Ortu: ${esc(m.nama_ortu)}</span></span>
+          <span class="chip ${m.aktif ? 'chip-hadir' : 'chip-abu'}">${m.aktif ? esc(m.kelas_nama) : 'Nonaktif'}</span>
+        </div>`).join('')
+      : `<div class="kosong">${kelas.length ? 'Belum ada murid di kelas Anda. Tekan Tambah untuk mendaftarkan.' : 'Belum ada kelas.'}</div>`;
+  };
+  tampil();
+  el.querySelector('#cari')?.addEventListener('input', (e) => {
+    cari = e.target.value.trim();
+    tampil();
+  });
+  el.querySelector('#filter')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-k]');
+    if (!b) return;
+    filter = Number(b.dataset.k);
+    for (const x of el.querySelectorAll('#filter button')) x.setAttribute('aria-pressed', String(x === b));
+    tampil();
+  });
+}
+
+export async function formMuridPembina(el, { ctx }) {
+  if (ctx.me.level !== 'guru') return ctx.pergi('/');
+  const { kelas } = await api('/api/pembina/murid');
+  if (!kelas.length) return ctx.pergi('/murid');
+  const m = { nik: '', nama: '', kelas_id: kelas[0].id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '' };
+
+  el.innerHTML = `
+    ${hdrKembali('Tambah Murid', '#/murid')}
+    <form class="isi" id="form" novalidate style="padding-bottom:0">
+      <div class="galat" id="galat" role="alert"></div>
+      ${bagianMurid(m, kelas)}
+      <div class="bar-bawah" style="margin:0 -16px"><button class="btn btn-utama" type="submit" id="simpan">Simpan</button></div>
+    </form>`;
+
+  const $ = (id) => el.querySelector('#' + id);
+  $('nik').addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 16);
+  });
+  $('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('galat').textContent = '';
+    const body = {
+      nik: $('nik').value, nama: $('nama').value, kelas_id: Number($('kelas').value), tempat_lahir: $('tempat').value,
+      tanggal_lahir: $('lahir').value, hp: $('hp').value, nama_ortu: $('ortu').value, hp_ortu: $('hportu').value,
+      asal_sekolah: $('asal').value,
+    };
+    const tombol = $('simpan');
+    tombol.disabled = true;
+    try {
+      await api('/api/pembina/murid', { method: 'POST', body });
+      toast('Murid ditambahkan.');
+      ctx.pergi('/murid');
     } catch (err) {
       $('galat').textContent = err.message;
       window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -84,7 +84,7 @@ export async function beranda(el, { ctx }) {
         <div class="tumpuk">
           <span class="sub">Namo Buddhaya,</span>
           <span style="font-size:19px;font-weight:700">${esc(me.nama)}</span>
-          <span class="kecil" style="opacity:.92">${me.level ? peranLabel(me.level) : ''}${me.tipe === 'cadangan' ? ' cadangan' : ''} · ${esc(ctx.vihara)}</span>
+          <span class="kecil" style="opacity:.92">${me.level ? peranLabel(me.level) : ''}${me.tipe === 'cadangan' ? ' cadangan' : ''}</span>
         </div>
       </div>
     </div>

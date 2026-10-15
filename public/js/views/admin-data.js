@@ -24,9 +24,13 @@ export async function lainnya(el, { ctx }) {
         ${item('#/admin/kelas', ikon.buku(), 'Kelas', 'Daftar kelas Sekolah Minggu')}
         ${item('#/admin/slot', ikon.jam(), 'Slot &amp; Mode Absen', 'Jam sesi, jendela scan, konfirmasi atau absen masuk')}
       </div>
+      ${ctx.waktu?.demo_tersedia ? `<span class="label-kecil">Uji coba (hanya server lokal)</span>
+      <div class="menu-grup">
+        ${item('#/admin/waktu', ikon.kalender(), 'Simulasi Waktu', 'Ubah tanggal &amp; jam server untuk mencoba demo di hari lain')}
+      </div>` : ''}
       <span class="label-kecil">Honor</span>
       <div class="menu-grup">
-        ${item('#/admin/honor', ikon.dokumen(), 'Honor &amp; Pengajuan', 'Rekap honor dari absensi dan surat permohonan pencairan ke Vihara')}
+        ${item('#/admin/honor', ikon.dokumen(), 'Honor &amp; Pengajuan', 'Rekap honor dari absensi dan surat permohonan pencairan')}
       </div>
       <span class="label-kecil">Laporan</span>
       <div class="kartu">
@@ -42,11 +46,6 @@ export async function lainnya(el, { ctx }) {
         <a class="btn btn-utama" id="rekap-murid" href="#/admin/rekap-murid/cetak?bulan=${bulanIni}">${ikon.dokumen(20)} Rekap Murid PDF (dengan materi)</a>
         <span class="kecil muted">Absensi tiap siswa per kelas, plus materi yang diajarkan pada setiap pertemuan.</span>
       </div>
-      <span class="label-kecil">Pengaturan</span>
-      <form class="kartu" id="form-vihara">
-        <div class="field"><label for="vihara">Nama vihara</label><input class="input" id="vihara" maxlength="80" value="${esc(ctx.vihara)}"></div>
-        <button class="btn btn-netral btn-kecil" type="submit">Simpan nama</button>
-      </form>
     </div>`;
 
   el.querySelector('#bulan').addEventListener('change', (e) => {
@@ -55,16 +54,6 @@ export async function lainnya(el, { ctx }) {
   });
   el.querySelector('#bulan-murid').addEventListener('change', (e) => {
     el.querySelector('#rekap-murid').href = `#/admin/rekap-murid/cetak?bulan=${e.target.value}`;
-  });
-  el.querySelector('#form-vihara').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-      await api('/api/admin/vihara', { method: 'PUT', body: { nama: el.querySelector('#vihara').value } });
-      await ctx.segarkanMe();
-      toast('Nama vihara disimpan.');
-    } catch (err) {
-      toast(err.message, 'galat');
-    }
   });
 }
 
@@ -221,7 +210,7 @@ export async function formPengguna(el, { params, ctx }) {
           <div class="grid2" style="gap:8px">
             <div class="field"><label class="sr-only" for="k-${s.id}">Kelas slot ${esc(s.nama)}</label>
               <select class="input" id="k-${s.id}" data-slot-kelas="${s.id}"><option value="">Tidak mengajar</option>
-              ${kelas.map((k) => `<option value="${k.id}" ${t?.kelas_id === k.id ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select></div>
+              ${kelas.filter((k) => k.slot_ids.includes(s.id)).map((k) => `<option value="${k.id}" ${t?.kelas_id === k.id ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select></div>
             <div class="field"><label class="sr-only" for="p-${s.id}">Peran slot ${esc(s.nama)}</label>
               <select class="input" id="p-${s.id}" data-slot-peran="${s.id}">
                 <option value="guru" ${(t?.peran ?? st.level) === 'guru' ? 'selected' : ''}>Pembina</option>
@@ -334,32 +323,43 @@ export async function formPengguna(el, { params, ctx }) {
 }
 
 export async function kelas(el, { ctx }) {
-  const { kelas: daftar } = await api('/api/admin/kelas');
+  const { kelas: daftar, slot } = await api('/api/admin/kelas');
+  const pilihSlot = (k, idPrefix) => (slot.length
+    ? `<div class="field"><span class="label">Diajarkan di slot</span>
+        <div class="tumpuk" style="gap:4px">${slot.map((s) => `
+          <label class="cek" style="min-height:44px"><input type="checkbox" name="slot" value="${s.id}" ${!k || k.slot_ids.includes(s.id) ? 'checked' : ''}>
+            <span class="tumpuk"><span class="tebal sedang">Slot ${esc(s.nama)}</span><span class="kecil muted">${NAMA_HARI[s.hari]} ${fmtJam(s.jam_mulai)}–${fmtJam(s.jam_selesai)}</span></span></label>`).join('')}
+        </div></div>`
+    : `<div class="info info-oranye">${ikon.info()}<span>Belum ada slot. Buat slot Pagi/Siang dulu di Slot &amp; Mode Absen.</span></div>`);
   el.innerHTML = `
     ${hdrKembali('Kelas', '#/admin/lainnya')}
     <div class="isi">
+      <div class="info info-abu">${ikon.info()}<span>Centang slot (Pagi/Siang) tempat tiap kelas diajarkan. Kelas hanya muncul di slot yang dicentang: pada jadwal pembina, absensi siswa, dan rute petugas QR. Satu kelas boleh di dua slot sekaligus.</span></div>
       ${daftar.map((k) => `
-        <form class="kartu rapat" data-kelas="${k.id}" style="flex-direction:row;align-items:center">
-          <label class="sr-only" for="kelas-${k.id}">Nama kelas</label>
-          <input class="input" id="kelas-${k.id}" value="${esc(k.nama)}" maxlength="40" style="flex:1">
-          <button class="btn btn-netral btn-kecil" style="width:auto" type="submit">Simpan</button>
+        <form class="kartu" data-kelas="${k.id}">
+          <div class="field"><label for="kelas-${k.id}">Nama kelas</label>
+            <input class="input" id="kelas-${k.id}" value="${esc(k.nama)}" maxlength="40"></div>
+          ${pilihSlot(k)}
+          <button class="btn btn-netral btn-kecil" type="submit">Simpan</button>
         </form>`).join('')}
       <form class="kartu" id="tambah">
         <div class="field"><label for="baru">Tambah kelas baru</label><input class="input" id="baru" maxlength="40" placeholder="Contoh: Pra-Remaja"></div>
+        ${pilihSlot(null)}
         <button class="btn btn-garis btn-kecil" type="submit">${ikon.tambah(18)} Tambah kelas</button>
       </form>
     </div>`;
+  const slotDipilih = (f) => [...f.querySelectorAll('input[name=slot]:checked')].map((x) => Number(x.value));
   el.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = e.target;
     try {
       if (f.id === 'tambah') {
-        await api('/api/admin/kelas', { method: 'POST', body: { nama: f.querySelector('#baru').value } });
+        await api('/api/admin/kelas', { method: 'POST', body: { nama: f.querySelector('#baru').value, slot_ids: slotDipilih(f) } });
         toast('Kelas ditambahkan.');
         ctx.muatUlang();
       } else {
-        await api(`/api/admin/kelas/${f.dataset.kelas}`, { method: 'PUT', body: { nama: f.querySelector('input').value } });
-        toast('Nama kelas disimpan.');
+        await api(`/api/admin/kelas/${f.dataset.kelas}`, { method: 'PUT', body: { nama: f.querySelector('.input').value, slot_ids: slotDipilih(f) } });
+        toast('Kelas disimpan.');
       }
     } catch (err) {
       toast(err.message, 'galat');

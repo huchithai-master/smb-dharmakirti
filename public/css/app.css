@@ -179,7 +179,9 @@ h1, h2, h3 { margin: 0; }
   font-size: 15px; background: #fff; width: 100%;
 }
 textarea.input { height: auto; padding: 12px 14px; resize: vertical; min-height: 84px; }
-select.input { padding-right: 8px; }
+select.input { padding-right: 8px; min-width: 0; max-width: 100%; text-overflow: ellipsis; }
+/* Di layar HP, pasangan kolom tanggal/slot/kelas dijadikan satu kolom agar tidak saling menimpa (terutama iPhone). */
+@media (max-width: 560px) { .grid2.kolom-hp { grid-template-columns: minmax(0, 1fr); } }
 /* iOS Safari: kolom tanggal/jam punya lebar bawaan sendiri sehingga bisa keluar dari kartu. Paksa mengikuti lebar kolom. */
 .field, .kartu { min-width: 0; }
 input.input[type="date"], input.input[type="month"], input.input[type="time"], input.input[type="datetime-local"] {

@@ -85,7 +85,7 @@ function formMasuk(el, ctx) {
           <img class="auth-logo-kecil" src="${LOGO}" alt="${ALT_LOGO}">
           <div class="tumpuk" style="gap:4px">
             <span class="auth-nama">SMB Dharmakirti</span>
-            <span class="auth-sub">Absensi pengajar ${esc(ctx.vihara)}</span>
+            <span class="auth-sub">Absensi pengajar</span>
           </div>
         </div>`)}
       <div class="auth-isi">

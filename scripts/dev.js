@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 import { tanganiApi } from '../lib/app.js';
 import { siapkan } from '../lib/db.js';
 
+// Server lokal ini mengaktifkan menu Simulasi Waktu (Admin > Lainnya). Di Vercel tidak pernah aktif.
+process.env.IZINKAN_SIMULASI_WAKTU = '1';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(ROOT, 'public');
 const TIPE = {
