@@ -15,8 +15,22 @@ function infoSesi(s) {
   return `<b>Absen masuk.</b> Scan di petugas pintu masuk mulai ${fmtJam(s.scan_mulai)}, tepat waktu s.d. ${batas}.`;
 }
 
-function kartuSesi(s, bisaScan) {
-  const rekan = s.rekan.length ? s.rekan.map((r) => `${peranLabel(r.peran)}: ${esc(r.nama)}`).join(' · ') : 'Tanpa rekan';
+// Daftar tim kelas: pembina dulu, lalu asisten, dengan nama sendiri ditandai "Anda".
+function daftarTim(s, namaSaya) {
+  const anggota = [
+    { nama: namaSaya, peran: s.peran, saya: true, ket: s.jenis === 'pengganti' ? 'pengganti' : s.jenis === 'tambahan' ? 'pembina kedua' : '' },
+    ...s.rekan.map((r) => ({ nama: r.nama, peran: r.peran, saya: false, ket: '' })),
+  ];
+  const grup = (peran, judul) => {
+    const isi = anggota.filter((a) => a.peran === peran).sort((a, b) => Number(b.saya) - Number(a.saya));
+    return `<div class="tim-grup"><span class="tim-judul">${judul}</span>${isi.length
+      ? isi.map((a) => `<span class="tim-nama${a.saya ? ' saya' : ''}">${esc(a.nama)}${a.saya ? ' <em>Anda</em>' : ''}${a.ket ? ` <small>(${a.ket})</small>` : ''}</span>`).join('')
+      : '<span class="tim-nama kosong">Belum ada</span>'}</div>`;
+  };
+  return `<div class="tim">${grup('guru', 'Pembina')}${grup('asisten', 'Asisten')}</div>`;
+}
+
+function kartuSesi(s, bisaScan, namaSaya) {
   const ket = s.keterangan ? `<span class="info info-ungu">${ikon.info()}<span>${esc(s.keterangan)}</span></span>` : '';
   let aksi = '';
   if (s.status === 'hadir' || s.status === 'terlambat') {
@@ -41,17 +55,17 @@ function kartuSesi(s, bisaScan) {
       siswa = `<button class="btn btn-abu" disabled>Absen Siswa terbuka setelah Anda absen</button>`;
     }
   }
-  const izinMenunggu = s.izin_menunggu ? `<div class="info info-oranye">${ikon.info()}<span>Pengajuan izin Anda sedang menunggu persetujuan admin.</span></div>` : '';
+  const izinMenunggu = s.izin_menunggu ? `<div class="info info-oranye">${ikon.info()}<span>Pengajuan izin Anda sedang menunggu keputusan Kepala SMB.</span></div>` : '';
   return `
     <div class="kartu">
       <div class="baris-antara" style="align-items:flex-start">
         <div class="tumpuk" style="gap:4px">
           <span class="slot-label ${s.status_slot === 'buka' ? '' : 'abu'}">Slot ${esc(s.slot_nama)} · ${fmtJam(s.jam_mulai)}–${fmtJam(s.jam_selesai)}</span>
           <span class="nama-kelas">Kelas ${esc(s.kelas_nama)}</span>
-          <span class="sedang muted">Peran: ${peranLabel(s.peran)}${s.jenis === 'pengganti' ? ' (pengganti)' : s.jenis === 'tambahan' ? ' (pembina kedua)' : ''} · ${rekan}</span>
         </div>
         ${chip(s.status)}
       </div>
+      ${daftarTim(s, namaSaya)}
       ${ket}
       <div class="info info-abu">${ikon.jam(16)}<span>${infoSesi(s)}</span></div>
       ${izinMenunggu}
@@ -65,12 +79,12 @@ export async function beranda(el, { ctx }) {
   const me = ctx.me;
   const { ringkasan: r, persen } = d.bulan;
   const sesiHariIni = d.sesi.length
-    ? d.sesi.map((s) => kartuSesi(s, true)).join('')
+    ? d.sesi.map((s) => kartuSesi(s, true, me.nama)).join('')
     : d.libur
       ? `<div class="info info-oranye">${ikon.info()}<span><b>Hari ini libur</b>: ${esc(d.libur.alasan)}. Tidak perlu scan QR.</span></div>`
       : `<div class="kartu"><div class="kosong" style="padding:16px">Tidak ada jadwal mengajar hari ini.</div></div>`;
   const berikut = d.berikutnya
-    ? `<h2 class="judul-seksi">Jadwal berikutnya · ${esc(fmtTanggal(d.berikutnya.tanggal, 'pendek'))}</h2>${d.berikutnya.sesi.map((s) => kartuSesi(s, false)).join('')}`
+    ? `<h2 class="judul-seksi">Jadwal berikutnya · ${esc(fmtTanggal(d.berikutnya.tanggal, 'pendek'))}</h2>${d.berikutnya.sesi.map((s) => kartuSesi(s, false, me.nama)).join('')}`
     : '';
 
   el.innerHTML = `

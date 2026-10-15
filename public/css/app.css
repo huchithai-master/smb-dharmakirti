@@ -282,6 +282,14 @@ input.input[type="datetime-local"]::-webkit-date-and-time-value { text-align: le
 .kosong { text-align: center; padding: 32px 16px; color: var(--muted); font-size: 14px; line-height: 1.6; }
 
 /* ---------- Navigasi bawah ---------- */
+.tim { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tim-grup { background: var(--abu-bg); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tim-judul { font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.tim-nama { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.tim-nama.saya { font-weight: 800; color: var(--utama); }
+.tim-nama em { font-style: normal; font-size: 10.5px; font-weight: 800; background: var(--utama); color: #fff; padding: 1px 7px; border-radius: 999px; vertical-align: 1px; }
+.tim-nama small { font-size: 12px; font-weight: 600; color: var(--muted); }
+.tim-nama.kosong { font-weight: 500; color: var(--muted); }
 .nav-bawah {
   position: sticky; bottom: 0; z-index: 10; background: #fff; border-top: 1px solid var(--garis);
   display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
