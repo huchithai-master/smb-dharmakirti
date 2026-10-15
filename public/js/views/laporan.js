@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import { esc, ikon, fmtBulan, fmtTanggal, fmtJam, bulanSingkat, peranLabel } from '../ui.js';
-import { LOGO_CONTOH } from './honor.js';
+import { LOGO_KOP } from './honor.js';
 
 const LABEL = { hadir: 'Hadir', terlambat: 'Terlambat', izin: 'Izin', alpa: 'Alpa', belum: 'Belum scan' };
 
@@ -27,10 +27,9 @@ export async function rekapMuridCetak(el, { query, ctx }) {
 
   const kopHtml = `
     <header class="kop">
-      ${LOGO_CONTOH}
+      ${LOGO_KOP}
       <div class="kop-teks">
         <div class="kop-nama">${esc(kop.nama_sekolah)}</div>
-        <div class="kop-vihara">${esc(d.nama_vihara)}</div>
         <div>${esc(kop.alamat)}</div>
         <div>${esc(kop.kontak)}</div>
       </div>
@@ -157,10 +156,9 @@ export async function rekapCetak(el, { query, ctx }) {
 
   const kopHtml = `
     <header class="kop">
-      ${LOGO_CONTOH}
+      ${LOGO_KOP}
       <div class="kop-teks">
         <div class="kop-nama">${esc(kop.nama_sekolah)}</div>
-        <div class="kop-vihara">${esc(d.nama_vihara)}</div>
         <div>${esc(kop.alamat)}</div>
         <div>${esc(kop.kontak)}</div>
       </div>

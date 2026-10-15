@@ -400,9 +400,10 @@ input.input[type="datetime-local"]::-webkit-date-and-time-value { text-align: le
 .surat p { margin: 0 0 10pt; }
 .surat .kanan { text-align: right; }
 .kop { display: flex; align-items: center; gap: 16px; padding-bottom: 8pt; border-bottom: 3px double #111; margin-bottom: 14pt; }
-.kop svg { flex: 0 0 auto; }
+.kop svg, .kop-logo { flex: 0 0 auto; }
+.kop-logo { height: 84px; width: auto; object-fit: contain; }
 .kop-teks { flex: 1; text-align: center; font-size: 10.5pt; line-height: 1.35; }
-.kop-nama { font-size: 16pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #0369a1; }
+.kop-nama { font-size: 16pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #1b2b63; }
 .kop-vihara { font-size: 12.5pt; font-weight: 700; }
 .surat table.meta { border-collapse: collapse; margin-bottom: 12pt; }
 .surat table.meta td { padding: 0 6px 0 0; vertical-align: top; }

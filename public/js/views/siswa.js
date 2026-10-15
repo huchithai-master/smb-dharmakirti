@@ -133,7 +133,7 @@ export async function daftarMurid(el) {
   const daftar = el.querySelector('#daftar');
   const tampil = () => {
     const q = cari.toLowerCase();
-    const rows = murid.filter((m) => (!filter || m.kelas_id === filter) && (!q || m.nama.toLowerCase().includes(q) || m.nik.includes(q)));
+    const rows = murid.filter((m) => (!filter || m.kelas_id === filter) && (!q || m.nama.toLowerCase().includes(q) || (m.nik ?? '').includes(q)));
     daftar.innerHTML = rows.length
       ? rows.map((m) => `
         <a class="item-link" href="#/admin/murid/${m.id}" style="${m.aktif ? '' : 'opacity:.6'}">
@@ -163,8 +163,8 @@ function bagianMurid(m, kelas) {
   return `
       <section class="kartu">
         <span class="label-kecil">Data siswa</span>
-        <div class="field"><label for="nik">NIK</label>
-          <input class="input" id="nik" inputmode="numeric" maxlength="16" pattern="[0-9]*" value="${esc(m.nik)}" placeholder="16 digit angka" required>
+        <div class="field"><label for="nik">NIK <span class="muted" style="font-weight:500">(boleh dikosongkan dulu)</span></label>
+          <input class="input" id="nik" inputmode="numeric" maxlength="16" pattern="[0-9]*" value="${esc(m.nik ?? '')}" placeholder="16 digit angka, isi nanti bila belum tahu">
           <span class="kecil muted">Hanya angka, 16 digit.</span></div>
         <div class="field"><label for="nama">Nama lengkap siswa</label><input class="input" id="nama" maxlength="80" value="${esc(m.nama)}" required></div>
         <div class="field"><label for="kelas">Kelas</label>
@@ -238,17 +238,22 @@ export async function muridPembina(el, { ctx }) {
   const { murid, kelas } = await api('/api/pembina/murid');
   let cari = '';
   let filter = 0;
-  const aktifN = (id) => murid.filter((m) => m.aktif && (!id || m.kelas_id === id)).length;
+  let tab = 'aktif';
+  const jumlah = (aktif, id = 0) => murid.filter((m) => m.aktif === aktif && (!id || m.kelas_id === id)).length;
 
   el.innerHTML = `
     <div class="hdr-putih">
       <div class="baris"><h1>Data Murid</h1></div>
-      <div class="kecil muted" style="padding:0 4px">${kelas.length ? `Kelas ${esc(kelas.map((k) => k.nama).join(', '))} · ${aktifN(0)} murid aktif` : 'Anda belum ditugaskan sebagai pembina di kelas mana pun.'}</div>
-      ${murid.length ? `<div style="padding:0 4px"><label class="sr-only" for="cari">Cari</label>
+      <div class="kecil muted" style="padding:0 4px">${kelas.length ? `Kelas ${esc(kelas.map((k) => k.nama).join(', '))}` : 'Anda belum ditugaskan sebagai pembina di kelas mana pun.'}</div>
+      ${kelas.length ? `<div class="seg tab-abu" id="tab" role="tablist" style="margin:0 4px">
+        <button role="tab" data-t="aktif" aria-selected="true">Aktif (${jumlah(true)})</button>
+        <button role="tab" data-t="arsip" aria-selected="false">Arsip (${jumlah(false)})</button>
+      </div>
+      <div style="padding:0 4px"><label class="sr-only" for="cari">Cari</label>
         <input class="input" id="cari" type="search" placeholder="Cari nama murid" style="background:#f7f8f9"></div>` : ''}
       ${kelas.length > 1 ? `<div class="chips" id="filter" style="padding:0 4px">
-        <button data-k="0" aria-pressed="true">Semua (${murid.length})</button>
-        ${kelas.map((k) => `<button data-k="${k.id}" aria-pressed="false">${esc(k.nama)} (${murid.filter((m) => m.kelas_id === k.id).length})</button>`).join('')}
+        <button data-k="0" aria-pressed="true">Semua kelas</button>
+        ${kelas.map((k) => `<button data-k="${k.id}" aria-pressed="false">${esc(k.nama)}</button>`).join('')}
       </div>` : ''}
     </div>
     <div class="isi" id="daftar" style="padding-bottom:96px"></div>
@@ -257,16 +262,21 @@ export async function muridPembina(el, { ctx }) {
   const daftar = el.querySelector('#daftar');
   const tampil = () => {
     const q = cari.toLowerCase();
-    const rows = murid.filter((m) => (!filter || m.kelas_id === filter) && (!q || m.nama.toLowerCase().includes(q)));
-    daftar.innerHTML = rows.length
-      ? rows.map((m) => `
-        <div class="item-link" style="${m.aktif ? '' : 'opacity:.6'}">
-          <span class="avatar kecil">${esc(inisial(m.nama))}</span>
-          <span class="tumpuk"><span class="tebal">${esc(m.nama)}</span>
-            <span class="kecil muted">${esc(m.asal_sekolah)} · Ortu: ${esc(m.nama_ortu)}</span></span>
-          <span class="chip ${m.aktif ? 'chip-hadir' : 'chip-abu'}">${m.aktif ? esc(m.kelas_nama) : 'Nonaktif'}</span>
+    const aktif = tab === 'aktif';
+    const rows = murid.filter((m) => m.aktif === aktif && (!filter || m.kelas_id === filter) && (!q || m.nama.toLowerCase().includes(q)));
+    daftar.innerHTML = (aktif ? '' : `<div class="info info-abu">${ikon.info()}<span>Murid di arsip tidak muncul di absensi. Riwayat absensinya tetap tersimpan, dan murid bisa diaktifkan kembali kapan saja.</span></div>`) +
+      (rows.length
+        ? rows.map((m) => `
+        <div class="item-link" style="gap:8px">
+          <a href="#/murid/${m.id}" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-decoration:none;color:inherit">
+            <span class="avatar kecil">${esc(inisial(m.nama))}</span>
+            <span class="tumpuk" style="min-width:0"><span class="tebal">${esc(m.nama)}</span>
+              <span class="kecil muted">${esc(m.asal_sekolah)} · Ortu: ${esc(m.nama_ortu)}</span></span>
+          </a>
+          ${aktif ? `<span class="chip chip-hadir">${esc(m.kelas_nama)}</span>`
+            : `<button class="btn btn-netral btn-kecil" style="width:auto" data-aktifkan="${m.id}">Aktifkan</button>`}
         </div>`).join('')
-      : `<div class="kosong">${kelas.length ? 'Belum ada murid di kelas Anda. Tekan Tambah untuk mendaftarkan.' : 'Belum ada kelas.'}</div>`;
+        : `<div class="kosong">${aktif ? (kelas.length ? 'Belum ada murid aktif. Tekan Tambah untuk mendaftarkan.' : 'Belum ada kelas.') : 'Arsip kosong.'}</div>`);
   };
   tampil();
   el.querySelector('#cari')?.addEventListener('input', (e) => {
@@ -280,23 +290,58 @@ export async function muridPembina(el, { ctx }) {
     for (const x of el.querySelectorAll('#filter button')) x.setAttribute('aria-pressed', String(x === b));
     tampil();
   });
+  el.querySelector('#tab')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-t]');
+    if (!b) return;
+    tab = b.dataset.t;
+    for (const x of el.querySelectorAll('#tab button')) x.setAttribute('aria-selected', String(x === b));
+    tampil();
+  });
+  daftar.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-aktifkan]');
+    if (!b) return;
+    b.disabled = true;
+    try {
+      await api(`/api/pembina/murid/${b.dataset.aktifkan}/aktif`, { method: 'PUT', body: { aktif: true } });
+      toast('Murid diaktifkan kembali.');
+      ctx.muatUlang();
+    } catch (err) {
+      toast(err.message, 'galat');
+      b.disabled = false;
+    }
+  });
 }
 
-export async function formMuridPembina(el, { ctx }) {
+// Tambah (id = 'baru') atau ubah murid oleh pembina; di sini juga arsip dan hapus.
+export async function formMuridPembina(el, { params, ctx }) {
   if (ctx.me.level !== 'guru') return ctx.pergi('/');
-  const { kelas } = await api('/api/pembina/murid');
+  const baru = params.id === 'baru';
+  const r = baru ? await api('/api/pembina/murid') : await api(`/api/pembina/murid/${encodeURIComponent(params.id)}`);
+  const kelas = r.kelas;
   if (!kelas.length) return ctx.pergi('/murid');
-  const m = { nik: '', nama: '', kelas_id: kelas[0].id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '' };
+  const m = r.murid ?? { nik: '', nama: '', kelas_id: kelas[0].id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', aktif: true };
 
   el.innerHTML = `
-    ${hdrKembali('Tambah Murid', '#/murid')}
+    ${hdrKembali(baru ? 'Tambah Murid' : 'Data Murid', '#/murid', baru ? '' : (m.aktif ? 'Aktif' : 'Di arsip'))}
     <form class="isi" id="form" novalidate style="padding-bottom:0">
       <div class="galat" id="galat" role="alert"></div>
       ${bagianMurid(m, kelas)}
+      ${baru ? '' : `
+      <section class="kartu">
+        <span class="label-kecil">Status murid</span>
+        <button class="btn btn-netral" type="button" id="arsip">${m.aktif ? 'Arsipkan murid' : 'Aktifkan kembali'}</button>
+        <span class="kecil muted">${m.aktif ? 'Murid yang sudah tidak ikut dipindah ke arsip. Riwayat absensi tetap tersimpan dan bisa diaktifkan lagi nanti.' : 'Murid ini ada di arsip dan tidak muncul di absensi.'}</span>
+        <button class="btn btn-bahaya" type="button" id="hapus">Hapus permanen</button>
+        <span class="kecil muted">Hanya bisa bila murid belum pernah punya riwayat absensi (mis. salah input). Kalau sudah, gunakan arsip.</span>
+      </section>`}
       <div class="bar-bawah" style="margin:0 -16px"><button class="btn btn-utama" type="submit" id="simpan">Simpan</button></div>
     </form>`;
 
   const $ = (id) => el.querySelector('#' + id);
+  const galat = (msg) => {
+    $('galat').textContent = msg;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   $('nik').addEventListener('input', (e) => {
     e.target.value = e.target.value.replace(/\D/g, '').slice(0, 16);
   });
@@ -306,19 +351,39 @@ export async function formMuridPembina(el, { ctx }) {
     const body = {
       nik: $('nik').value, nama: $('nama').value, kelas_id: Number($('kelas').value), tempat_lahir: $('tempat').value,
       tanggal_lahir: $('lahir').value, hp: $('hp').value, nama_ortu: $('ortu').value, hp_ortu: $('hportu').value,
-      asal_sekolah: $('asal').value,
+      asal_sekolah: $('asal').value, aktif: baru ? true : m.aktif,
     };
     const tombol = $('simpan');
     tombol.disabled = true;
     try {
-      await api('/api/pembina/murid', { method: 'POST', body });
-      toast('Murid ditambahkan.');
+      if (baru) await api('/api/pembina/murid', { method: 'POST', body });
+      else await api(`/api/pembina/murid/${m.id}`, { method: 'PUT', body });
+      toast(baru ? 'Murid ditambahkan.' : 'Data murid tersimpan.');
       ctx.pergi('/murid');
     } catch (err) {
-      $('galat').textContent = err.message;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      galat(err.message);
     } finally {
       tombol.disabled = false;
+    }
+  });
+  $('arsip')?.addEventListener('click', async () => {
+    if (m.aktif && !confirm(`Arsipkan ${m.nama}? Murid tidak muncul lagi di absensi, tapi bisa diaktifkan kembali kapan saja.`)) return;
+    try {
+      await api(`/api/pembina/murid/${m.id}/aktif`, { method: 'PUT', body: { aktif: !m.aktif } });
+      toast(m.aktif ? 'Murid dipindah ke arsip.' : 'Murid diaktifkan kembali.');
+      ctx.pergi('/murid');
+    } catch (err) {
+      galat(err.message);
+    }
+  });
+  $('hapus')?.addEventListener('click', async () => {
+    if (!confirm(`Hapus permanen ${m.nama}? Data tidak bisa dikembalikan.`)) return;
+    try {
+      await api(`/api/pembina/murid/${m.id}`, { method: 'DELETE' });
+      toast('Murid dihapus.');
+      ctx.pergi('/murid');
+    } catch (err) {
+      galat(err.message);
     }
   });
 }

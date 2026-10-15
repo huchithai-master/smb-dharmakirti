@@ -111,14 +111,7 @@ export async function pengaturan(el, { ctx }) {
   });
 }
 
-export const LOGO_CONTOH = `
-  <svg viewBox="0 0 96 96" width="84" height="84" role="img" aria-label="Logo contoh">
-    <circle cx="48" cy="48" r="45" fill="#0369A1"/>
-    <circle cx="48" cy="48" r="38" fill="none" stroke="#fff" stroke-width="1.5" stroke-dasharray="2 3"/>
-    <g transform="translate(18 16) scale(2.5)" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 4c2 2.5 2 6 0 9-2-3-2-6.5 0-9z"/><path d="M12 13c-3-.5-6-2.5-7-5 3 0 5.5 1.5 7 5zM12 13c3-.5 6-2.5 7-5-3 0-5.5 1.5-7 5z"/><path d="M5 16c2.5 2 11.5 2 14 0"/>
-    </g>
-  </svg>`;
+export const LOGO_KOP = `<img class="kop-logo" src="/icons/logo-smb.png" alt="Logo Sekolah Minggu Buddhis Dharmakirti" width="73" height="84">`;
 
 export async function cetak(el, { query, ctx }) {
   const bulan = /^\d{4}-\d{2}$/.test(query.bulan ?? '') ? query.bulan : ctx.waktu.tanggal.slice(0, 7);
@@ -136,10 +129,9 @@ export async function cetak(el, { query, ctx }) {
     </div>
     <article class="surat">
       <header class="kop">
-        ${LOGO_CONTOH}
+        ${LOGO_KOP}
         <div class="kop-teks">
           <div class="kop-nama">${esc(p.nama_sekolah)}</div>
-          <div class="kop-vihara">${esc(d.nama_vihara)}</div>
           <div>${esc(p.alamat)}</div>
           <div>${esc(p.kontak)}</div>
         </div>
@@ -152,7 +144,7 @@ export async function cetak(el, { query, ctx }) {
         <tr><td>Perihal</td><td>:</td><td><b>Permohonan Pencairan Dana Operasional Pengajar Bulan ${esc(fmtBulan(bulan))}</b></td></tr>
       </table>
 
-      <p>Kepada Yth.<br><b>${esc(p.kepada)}</b><br>${esc(d.nama_vihara)}<br>di Tempat</p>
+      <p>Kepada Yth.<br><b>${esc(p.kepada)}</b><br>di Tempat</p>
 
       <p>Namo Buddhaya,</p>
       <p>Dengan hormat,<br>Berdasarkan rekap absensi pengajar ${esc(p.nama_sekolah)} periode 1–${akhir} ${esc(fmtBulan(bulan))},

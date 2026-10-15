@@ -30,7 +30,7 @@ const RUTE = [
   { path: '/scan', view: scan.scan, perlu: 'is_pengajar', polos: true },
   { path: '/siswa', view: siswa.absenSiswa, perlu: 'is_pengajar', nav: 'beranda' },
   { path: '/murid', view: siswa.muridPembina, perlu: 'is_pengajar', nav: 'murid' },
-  { path: '/murid/baru', view: siswa.formMuridPembina, perlu: 'is_pengajar', nav: 'murid' },
+  { path: '/murid/:id', view: siswa.formMuridPembina, perlu: 'is_pengajar', nav: 'murid' },
   { path: '/riwayat', view: pengajar.riwayat, perlu: 'is_pengajar', nav: 'riwayat' },
   { path: '/izin', view: pengajar.izin, perlu: 'is_pengajar', nav: 'izin' },
   { path: '/akun', view: pengajar.akun, perlu: 'login', nav: 'akun' },
