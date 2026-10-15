@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { esc, ikon, chip, fmtTanggal, fmtJam, peranLabel, toast, JENIS_IZIN } from '../ui.js';
 
 export function subNav(aktif) {
-  const item = [['dashboard', '#/admin', 'Dashboard'], ['tugas', '#/admin/tugas', 'Atur Tugas'], ['lainnya', '#/admin/lainnya', 'Lainnya']];
+  const item = [['dashboard', '#/admin', 'Dashboard'], ['lainnya', '#/admin/lainnya', 'Lainnya']];
   return `<nav class="seg tab-abu" aria-label="Menu admin">${item
     .map(([k, href, label]) => `<a href="${href}" class="btn btn-kecil" style="min-height:40px;${k === aktif ? 'background:#fff;color:var(--utama);box-shadow:0 1px 3px rgba(17,24,39,.12)' : 'background:transparent;color:var(--abu)'}" ${k === aktif ? 'aria-current="page"' : ''}>${label}</a>`)
     .join('')}</nav>`;
@@ -21,10 +21,34 @@ export async function dashboard(el, { query, ctx }) {
   const d = await api(`/api/admin/dashboard?${qs({ tanggal: query.tanggal, slot_id: query.slot })}`);
   const slot = d.slots.find((s) => s.id === d.slot_id);
   const r = d.data?.ringkasan;
-  const stat = !r ? [] : slot.mode === 'konfirmasi'
-    ? [['Hadir', r.hadir, 'var(--hijau-teks)'], ['Izin', r.izin, 'var(--ungu)'], [d.data.status_slot === 'nanti' ? 'Terjadwal' : 'Belum', r.belum + r.nanti, 'var(--abu)'], ['Alpa', r.alpa, 'var(--merah)']]
-    : [['Hadir', r.hadir, 'var(--hijau-teks)'], ['Terlambat', r.terlambat, 'var(--oranye)'], ['Izin', r.izin, 'var(--ungu)'], [r.alpa ? 'Alpa' : d.data.status_slot === 'nanti' ? 'Terjadwal' : 'Belum', r.alpa || r.belum + r.nanti, r.alpa ? 'var(--merah)' : 'var(--abu)']];
-  const tindakan = d.izin_menunggu.length + d.butuh_pengganti.length;
+  // Ringkasan kehadiran: pembina, asisten, dan murid (dihitung dari semua kelas di slot ini).
+  const orang = (d.data?.kelas ?? []).flatMap((k) => k.anggota);
+  const hitungPengajar = (peran) => {
+    const a = orang.filter((x) => x.peran === peran);
+    return { total: a.length, hadir: a.filter((x) => x.status === 'hadir' || x.status === 'terlambat').length, izin: a.filter((x) => x.status === 'izin').length };
+  };
+  const pembina = hitungPengajar('guru');
+  const asisten = hitungPengajar('asisten');
+  const semuaMurid = (d.data?.kelas ?? []).flatMap((k) => k.murid ?? []);
+  const muridHadir = semuaMurid.filter((m) => m.status === 'hadir').length;
+  const stat = !r ? [] : [
+    ['Pembina hadir', `${pembina.hadir}/${pembina.total}`, pembina.izin ? `${pembina.izin} izin` : ''],
+    ['Asisten hadir', `${asisten.hadir}/${asisten.total}`, asisten.izin ? `${asisten.izin} izin` : ''],
+    ['Murid hadir', `${muridHadir}/${semuaMurid.length}`, semuaMurid.some((m) => m.status) ? '' : 'belum diabsen'],
+  ];
+  const STATUS_MURID = [['hadir', 'Hadir'], ['izin', 'Izin'], ['sakit', 'Sakit'], ['alpa', 'Alpa'], [null, 'Belum diabsen']];
+  const detailMurid = (k) => {
+    const m = k.murid ?? [];
+    if (!m.length) return '';
+    const hadir = m.filter((x) => x.status === 'hadir').length;
+    const tercatat = m.some((x) => x.status);
+    return `<details class="detail-murid"><summary><span>Murid</span><span class="kecil tebal">${tercatat ? `${hadir} dari ${m.length} hadir` : `${m.length} murid · belum diabsen`}</span></summary>
+      ${STATUS_MURID.map(([st, label]) => {
+        const grup = m.filter((x) => x.status === st);
+        return grup.length ? `<div class="grup-murid"><span class="kecil muted">${label} (${grup.length})</span><span>${grup.map((x) => esc(x.nama)).join(', ')}</span></div>` : '';
+      }).join('')}
+    </details>`;
+  };
 
   el.innerHTML = `
     <div class="hdr" style="padding-bottom:60px">
@@ -42,16 +66,7 @@ export async function dashboard(el, { query, ctx }) {
     <div class="angkat">${d.slots.length ? tabSlot(d.slots, d.slot_id) : (d.libur ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span><span class="kecil muted">${d.libur.jenis === 'semester' ? 'Libur semester' : 'Libur harian'} · tidak ada sesi dan tidak ada alpa.</span></div>` : '<div class="kartu bayang"><span class="muted">Tidak ada sesi di tanggal ini.</span></div>')}</div>
     <div class="isi">
       ${subNav('dashboard')}
-      ${r ? `<div class="stat-grid">${stat.map(([l, n, w]) => `<div class="stat"><b>${n}</b><span style="color:${w}">${l}</span></div>`).join('')}</div>` : ''}
-      ${tindakan ? `
-      <div class="kartu" style="background:var(--oranye-bg);border-color:var(--oranye-garis)">
-        <span class="label-kecil" style="color:var(--oranye)">Perlu tindakan</span>
-        ${d.butuh_pengganti.map((b) => `
-          <div class="baris-antara"><div class="tumpuk"><span class="tebal">Kelas ${esc(b.kelas_nama)} butuh pembina pengganti</span>
-            <span class="kecil muted">${esc(fmtTanggal(b.tanggal, 'pendek'))} · Slot ${esc(b.slot_nama)} · ${esc(b.nama)} ${JENIS_IZIN[b.jenis].toLowerCase()}</span></div>
-            <a class="btn btn-kecil btn-garis" style="width:auto;color:var(--oranye);border-color:var(--oranye)" href="#/admin/tugas?${qs({ tanggal: b.tanggal, slot: b.slot_id, kelas: b.kelas_id, peran: 'guru', ganti: b.pengguna_id })}">Tunjuk</a></div>`).join('')}
-        ${d.izin_menunggu.length ? `<button class="btn-teks sedang" style="color:var(--oranye);text-align:left;padding:0" data-gulir="izin">${d.izin_menunggu.length} izin menunggu persetujuan ↓</button>` : ''}
-      </div>` : ''}
+      ${r ? `<div class="stat-grid tiga">${stat.map(([l, n, ket]) => `<div class="stat"><b>${n}</b><span style="color:var(--utama)">${l}</span>${ket ? `<small class="muted">${ket}</small>` : ''}</div>`).join('')}</div>` : ''}
       ${d.data ? `<h2 class="judul-seksi">Status per kelas</h2>
         ${d.data.kelas.map((k) => {
           const perlu = k.anggota.filter((a) => a.status !== 'izin');
@@ -61,23 +76,13 @@ export async function dashboard(el, { query, ctx }) {
             <div class="baris-antara"><span style="font-size:15px;font-weight:800">${esc(k.nama)}</span>
               <span class="kecil tebal" style="color:${lengkap ? 'var(--hijau-teks)' : 'var(--oranye)'}">${lengkap ? 'Lengkap' : `${hadir}/${perlu.length} hadir`}</span></div>
             ${k.catatan.map((c) => `<span class="info info-ungu" style="padding:5px 10px">${esc(c)}</span>`).join('')}
-            ${k.siswa?.total ? `<span class="kecil muted">Siswa: ${k.siswa.tercatat ? `${k.siswa.hadir} dari ${k.siswa.total} hadir` : 'absensi belum diisi'}${k.materi ? ' · Materi: ' + esc(k.materi) : ''}</span>` : ''}
+            ${detailMurid(k)}
+            ${k.materi ? `<span class="kecil muted">Materi: ${esc(k.materi)}</span>` : ''}
             ${k.anggota.map((a) => `<div class="baris-orang"><div class="tumpuk"><span class="nama">${esc(a.nama)}</span>
               <span class="kecil muted">${peranLabel(a.peran)}${a.keterangan ? ' · ' + esc(a.keterangan) : ''} · ${a.jam ? 'scan ' + fmtJam(a.jam) : a.izin_menunggu ? 'izin menunggu' : 'belum ada scan'}</span></div>
               ${chip(a.status)}</div>`).join('')}
           </div>`;
         }).join('') || '<div class="kosong">Belum ada pengajar terjadwal di slot ini.</div>'}` : ''}
-      <h2 class="judul-seksi" id="izin">Izin menunggu persetujuan</h2>
-      ${d.izin_menunggu.map((i) => `
-        <div class="kartu rapat">
-          <div class="tumpuk"><span class="tebal">${esc(i.nama)} · ${JENIS_IZIN[i.jenis]}</span>
-            <span class="kecil muted">${esc(fmtTanggal(i.tanggal, 'pendek'))} · Slot ${esc(i.slot_nama)} · ${i.peran ? peranLabel(i.peran) + ' ' : ''}${esc(i.kelas_nama)}</span>
-            ${i.alasan ? `<span class="kecil">"${esc(i.alasan)}"</span>` : ''}</div>
-          <div class="dua-tombol">
-            <button class="btn btn-netral btn-kecil" data-izin="${i.id}" data-putus="ditolak">Tolak</button>
-            <button class="btn btn-utama btn-kecil" data-izin="${i.id}" data-putus="disetujui">Setujui</button>
-          </div>
-        </div>`).join('') || '<div class="kosong" style="padding:12px">Tidak ada izin yang menunggu.</div>'}
     </div>`;
 
   const ke = (o) => ctx.pergi(`/admin?${qs({ tanggal: d.tanggal, slot: d.slot_id, ...o })}`);
@@ -85,19 +90,6 @@ export async function dashboard(el, { query, ctx }) {
   el.addEventListener('click', async (e) => {
     const s = e.target.closest('[data-slot]');
     if (s) return ke({ slot: s.dataset.slot });
-    const g = e.target.closest('[data-gulir]');
-    if (g) return document.getElementById(g.dataset.gulir)?.scrollIntoView({ behavior: 'smooth' });
-    const b = e.target.closest('[data-izin]');
-    if (!b) return;
-    b.disabled = true;
-    try {
-      await api(`/api/admin/izin/${b.dataset.izin}`, { method: 'POST', body: { keputusan: b.dataset.putus } });
-      toast(b.dataset.putus === 'disetujui' ? 'Izin disetujui.' : 'Izin ditolak.');
-      ctx.muatUlang();
-    } catch (err) {
-      toast(err.message, 'galat');
-      b.disabled = false;
-    }
   });
 
   const segar = setInterval(() => document.visibilityState === 'visible' && !el.querySelector(':focus') && ctx.muatUlang(), 30000);
@@ -106,9 +98,9 @@ export async function dashboard(el, { query, ctx }) {
 
 export async function tugas(el, { query, ctx }) {
   const mode = ['pindah', 'kedua'].includes(query.mode) ? query.mode : 'pengganti';
-  const d = await api(`/api/admin/tugas?${qs({ tanggal: query.tanggal, slot_id: query.slot })}`);
+  const d = await api(`/api/kepala/tugas?${qs({ tanggal: query.tanggal, slot_id: query.slot })}`);
   const slot = d.slots.find((s) => s.id === d.slot_id);
-  const ke = (o) => ctx.pergi(`/admin/tugas?${qs({ mode, tanggal: d.tanggal, slot: d.slot_id, ...o })}`);
+  const ke = (o) => ctx.pergi(`/kepala/tugas?${qs({ mode, tanggal: d.tanggal, slot: d.slot_id, ...o })}`);
   const tertutup = d.status_slot === 'selesai';
 
   const daftarTugas = d.tugas.filter((t) => t.jenis === (mode === 'kedua' ? 'tambahan' : mode));
@@ -123,7 +115,7 @@ export async function tugas(el, { query, ctx }) {
 
   el.innerHTML = `
     <div class="hdr-putih">
-      <div class="baris"><a class="btn-kembali" href="#/admin" aria-label="Kembali ke Dashboard">${ikon.kembali()}</a><h1>Atur Tugas</h1></div>
+      <div class="baris"><a class="btn-kembali" href="#/kepala" aria-label="Kembali ke Beranda Kepala">${ikon.kembali()}</a><h1>Atur Tugas</h1></div>
       <div class="seg tab-abu" role="tablist" style="margin:0 4px">
         <button role="tab" data-mode="pengganti" aria-selected="${mode === 'pengganti'}">Pengganti</button>
         <button role="tab" data-mode="kedua" aria-selected="${mode === 'kedua'}">Pembina 2</button>
@@ -153,11 +145,11 @@ export async function tugas(el, { query, ctx }) {
   el.querySelector('#slot').addEventListener('change', (e) => ke({ slot: e.target.value, kelas: null, ganti: null }));
   el.addEventListener('click', async (e) => {
     const m = e.target.closest('[data-mode]');
-    if (m) return ctx.pergi(`/admin/tugas?${qs({ mode: m.dataset.mode, tanggal: d.tanggal, slot: d.slot_id })}`);
+    if (m) return ctx.pergi(`/kepala/tugas?${qs({ mode: m.dataset.mode, tanggal: d.tanggal, slot: d.slot_id })}`);
     const h = e.target.closest('[data-hapus]');
     if (h && confirm('Batalkan penugasan ini?')) {
       try {
-        await api(`/api/admin/tugas/${h.dataset.hapus}`, { method: 'DELETE' });
+        await api(`/api/kepala/tugas/${h.dataset.hapus}`, { method: 'DELETE' });
         toast('Penugasan dibatalkan.');
         ctx.muatUlang();
       } catch (err) {
@@ -228,7 +220,7 @@ async function formKedua(wadah, d, query, ctx) {
     tombol.disabled = true;
     tombol.textContent = 'Pilih pembina dulu';
     kandidatEl.innerHTML = '<div class="kosong">Memuat calon…</div>';
-    const k = await api(`/api/admin/kandidat?${qs({ tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran: 'guru' })}`);
+    const k = await api(`/api/kepala/kandidat?${qs({ tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran: 'guru' })}`);
     const sala = (c) => !tetap || c.tipe === 'tetap';
     const grup = (judul, list) => {
       const l = list.filter(sala);
@@ -267,12 +259,12 @@ async function formKedua(wadah, d, query, ctx) {
     if (!confirm(`Setujui pembina kedua untuk kelas ${nama}?\n${tetap ? 'Berlaku tetap setiap Minggu.' : 'Hanya pada tanggal ini.'}`)) return;
     tombol.disabled = true;
     try {
-      await api('/api/admin/pembina-kedua', {
+      await api('/api/kepala/pembina-kedua', {
         method: 'POST',
         body: { tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, pengguna_id: pilihan, tetap },
       });
       toast('Pembina kedua disetujui.');
-      ctx.pergi(`/admin/tugas?${qs({ mode: 'kedua', tanggal: d.tanggal, slot: d.slot_id })}`);
+      ctx.pergi(`/kepala/tugas?${qs({ mode: 'kedua', tanggal: d.tanggal, slot: d.slot_id })}`);
     } catch (err) {
       toast(err.message, 'galat');
       tombol.disabled = false;
@@ -310,7 +302,7 @@ async function formPengganti(wadah, d, query, ctx) {
     tombol.disabled = true;
     tombol.textContent = 'Pilih pengganti dulu';
     kandidatEl.innerHTML = '<div class="kosong">Memuat calon…</div>';
-    const k = await api(`/api/admin/kandidat?${qs({ tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran, menggantikan_id: ganti })}`);
+    const k = await api(`/api/kepala/kandidat?${qs({ tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran, menggantikan_id: ganti })}`);
     const grup = (judul, list) => list.length ? `<span class="label-kecil" style="margin-top:6px">${judul}</span>${list.map((c) => `
       <button class="opsi" data-calon="${c.pengguna_id}" data-nama="${esc(c.nama)}" aria-pressed="false">
         <span class="radio"></span>
@@ -344,12 +336,12 @@ async function formPengganti(wadah, d, query, ctx) {
   tombol.addEventListener('click', async () => {
     tombol.disabled = true;
     try {
-      await api('/api/admin/pengganti', {
+      await api('/api/kepala/pengganti', {
         method: 'POST',
         body: { tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran, pengguna_id: pilihan, menggantikan_id: ganti },
       });
       toast('Pengganti ditugaskan.');
-      ctx.pergi(`/admin/tugas?${qs({ mode: 'pengganti', tanggal: d.tanggal, slot: d.slot_id })}`);
+      ctx.pergi(`/kepala/tugas?${qs({ mode: 'pengganti', tanggal: d.tanggal, slot: d.slot_id })}`);
     } catch (err) {
       toast(err.message, 'galat');
       tombol.disabled = false;
@@ -387,7 +379,7 @@ function formPindah(wadah, d, query, ctx) {
 
   async function kirim(keKelas) {
     try {
-      await api('/api/admin/pindah', { method: 'POST', body: { tanggal: d.tanggal, slot_id: d.slot_id, pengguna_id: asisten.pengguna_id, ke_kelas_id: keKelas } });
+      await api('/api/kepala/pindah', { method: 'POST', body: { tanggal: d.tanggal, slot_id: d.slot_id, pengguna_id: asisten.pengguna_id, ke_kelas_id: keKelas } });
       toast(keKelas === asisten.kelas_id ? 'Asisten dikembalikan ke kelas tetapnya.' : 'Asisten dipindahkan.');
       ctx.muatUlang();
     } catch (err) {

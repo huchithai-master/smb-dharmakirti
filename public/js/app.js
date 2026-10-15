@@ -1,5 +1,5 @@
 import { api } from './api.js';
-import { esc, ikon, fmtTanggal, fmtJam } from './ui.js';
+import { esc, ikon, fmtTanggal, fmtJam, toast } from './ui.js';
 import * as auth from './views/auth.js';
 import * as pengajar from './views/pengajar.js';
 import * as scan from './views/scan.js';
@@ -9,6 +9,7 @@ import * as data from './views/admin-data.js';
 import * as honor from './views/honor.js';
 import * as laporan from './views/laporan.js';
 import * as siswa from './views/siswa.js';
+import * as kepala from './views/kepala.js';
 
 export const ctx = {
   me: null,
@@ -36,7 +37,9 @@ const RUTE = [
   { path: '/akun', view: pengajar.akun, perlu: 'login', nav: 'akun' },
   { path: '/petugas', view: petugas.petugas, perlu: 'is_petugas', nav: 'petugas' },
   { path: '/admin', view: admin.dashboard, perlu: 'is_admin', nav: 'admin' },
-  { path: '/admin/tugas', view: admin.tugas, perlu: 'is_admin', nav: 'admin' },
+  { path: '/kepala', view: kepala.beranda, perlu: 'is_kepala', nav: 'kepala' },
+  { path: '/kepala/tugas', view: admin.tugas, perlu: 'is_kepala', nav: 'kepala' },
+  { path: '/kepala/lainnya', view: kepala.lainnya, perlu: 'is_kepala', nav: 'kepala' },
   { path: '/admin/lainnya', view: data.lainnya, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/pengguna', view: data.daftarPengguna, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/pengguna/:id', view: data.formPengguna, perlu: 'is_admin', nav: 'admin' },
@@ -46,11 +49,11 @@ const RUTE = [
   { path: '/admin/kelas', view: data.kelas, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/slot', view: data.slot, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/waktu', view: data.waktu, perlu: 'is_admin', nav: 'admin' },
-  { path: '/admin/honor', view: honor.honor, perlu: 'is_admin', nav: 'admin' },
+  { path: '/admin/honor', view: honor.honor, perlu: 'bisa_laporan', nav: 'admin' },
   { path: '/admin/honor/pengaturan', view: honor.pengaturan, perlu: 'is_admin', nav: 'admin' },
-  { path: '/admin/honor/cetak', view: honor.cetak, perlu: 'is_admin', polos: true, lebar: true },
-  { path: '/admin/rekap/cetak', view: laporan.rekapCetak, perlu: 'is_admin', polos: true, lebar: true },
-  { path: '/admin/rekap-murid/cetak', view: laporan.rekapMuridCetak, perlu: 'is_admin', polos: true, lebar: true },
+  { path: '/admin/honor/cetak', view: honor.cetak, perlu: 'bisa_laporan', polos: true, lebar: true },
+  { path: '/admin/rekap/cetak', view: laporan.rekapCetak, perlu: 'bisa_laporan', polos: true, lebar: true },
+  { path: '/admin/rekap-murid/cetak', view: laporan.rekapMuridCetak, perlu: 'bisa_laporan', polos: true, lebar: true },
 ].map((r) => {
   const nama = [];
   const pola = new RegExp('^' + r.path.replace(/:(\w+)/g, (_, n) => (nama.push(n), '([^/]+)')) + '$');
@@ -67,6 +70,7 @@ export function rumah() {
   const m = ctx.me;
   if (!m) return '/login';
   if (m.is_pengajar) return '/';
+  if (m.is_kepala) return '/kepala';
   if (m.is_admin) return '/admin';
   if (m.is_petugas) return '/petugas';
   return '/akun';
@@ -94,12 +98,16 @@ function navBawah(aktif) {
     item.push(['izin', '#/izin', ikon.dokumen(), 'Izin']);
   }
   if (m.is_petugas) item.push(['petugas', '#/petugas', ikon.qr(), 'Petugas QR']);
+  if (m.is_kepala) item.push(['kepala', '#/kepala', ikon.dokumen(), 'Kepala SMB']);
   if (m.is_admin) item.push(['admin', '#/admin', ikon.grafik(), 'Admin']);
   item.push(['akun', '#/akun', ikon.orang(), 'Akun']);
   return `<nav class="nav-bawah" aria-label="Menu utama">${item
     .map(([k, href, ik, label]) => `<a href="${href}" ${k === aktif ? 'aria-current="page"' : ''}>${ik}${label}</a>`)
     .join('')}</nav>`;
 }
+
+// Halaman honor/rekap dipakai bersama; bagi Kepala SMB tanpa hak admin, tab yang menyala adalah tab Kepala SMB.
+const navAktif = (nav) => (nav === 'admin' && ctx.me?.is_kepala && !ctx.me?.is_admin ? 'kepala' : nav);
 
 function barDemo() {
   if (!ctx.waktu?.demo) return '';
@@ -131,7 +139,7 @@ async function render() {
   const app = document.getElementById('app');
   app.classList.toggle('lebar', !!rute.lebar);
   app.innerHTML = `${rute.polos ? '' : barDemo()}<main id="view" class="${rute.polos ? 'polos' : ''}"><div class="memuat">Memuat…</div></main>${
-    rute.nav && ctx.me ? navBawah(rute.nav) : ''
+    rute.nav && ctx.me ? navBawah(navAktif(rute.nav)) : ''
   }`;
   const el = app.querySelector('#view');
   window.scrollTo(0, 0);
@@ -146,6 +154,56 @@ async function render() {
     }
   }
 }
+
+// ---- Keluar otomatis bila tidak dipakai atau ditinggalkan (aplikasi dialihkan) selama 10 menit ----
+const BATAS_DIAM_MS = 10 * 60 * 1000;
+const KUNCI_AKTIF = 'smb_aktif_terakhir';
+let aktifTerakhir = Date.now();
+
+function bacaAktifTersimpan() {
+  try { return Number(localStorage.getItem(KUNCI_AKTIF)) || 0; } catch { return 0; }
+}
+function catatAktif() {
+  const t = Date.now();
+  if (t - aktifTerakhir < 5000) return; // hemat tulis
+  aktifTerakhir = t;
+  try { localStorage.setItem(KUNCI_AKTIF, String(t)); } catch { /* penyimpanan diblokir: hanya berlaku di halaman ini */ }
+}
+// Layar Petugas QR sengaja dibiarkan menyala di perangkat kios, jadi selama terlihat dianggap sedang dipakai.
+const layarKios = () => ctx.me?.is_petugas && document.visibilityState === 'visible' && bacaHash().path === '/petugas';
+
+async function keluarOtomatis() {
+  ctx.me = null;
+  try { await api('/api/logout', { method: 'POST' }); } catch { /* tanpa jaringan: sesi lokal tetap dilepas */ }
+  try { localStorage.removeItem(KUNCI_AKTIF); } catch { /* abaikan */ }
+  ctx.pergi('/login');
+  toast('Anda keluar otomatis karena tidak aktif selama 10 menit.');
+}
+
+function periksaDiam() {
+  if (!ctx.me) return false;
+  if (layarKios()) {
+    aktifTerakhir = 0;
+    catatAktif();
+    return false;
+  }
+  const terakhir = Math.max(aktifTerakhir, bacaAktifTersimpan());
+  if (Date.now() - terakhir > BATAS_DIAM_MS) {
+    keluarOtomatis();
+    return true;
+  }
+  return false;
+}
+
+for (const nama of ['pointerdown', 'keydown', 'touchstart', 'scroll', 'input']) {
+  window.addEventListener(nama, catatAktif, { passive: true, capture: true });
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') periksaDiam();
+});
+window.addEventListener('pageshow', () => periksaDiam());
+window.addEventListener('focus', () => periksaDiam());
+setInterval(periksaDiam, 15000);
 
 window.addEventListener('hashchange', render);
 window.addEventListener('sesi-habis', () => {
@@ -164,6 +222,14 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
 (async function mulai() {
   try {
     await muatMe();
+    // Aplikasi dibuka lagi setelah ditinggal lebih dari 10 menit: minta login ulang.
+    const tersimpan = bacaAktifTersimpan();
+    if (ctx.me && tersimpan && Date.now() - tersimpan > BATAS_DIAM_MS) {
+      await keluarOtomatis();
+      return render();
+    }
+    aktifTerakhir = 0;
+    catatAktif();
   } catch (e) {
     document.getElementById('app').innerHTML = `<div class="isi"><div class="galat">${esc(e.message)}</div></div>`;
     return;

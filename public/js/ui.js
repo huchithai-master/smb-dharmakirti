@@ -19,6 +19,14 @@ export const fmtBulan = (b) => {
 export const bulanSingkat = (t) => BULAN[Number(t.slice(5, 7)) - 1].slice(0, 3);
 export const fmtJam = (j) => (j ? j.replace(':', '.') : '');
 export const peranLabel = (p) => (p === 'guru' ? 'Pembina' : 'Asisten');
+export const JABATAN = {
+  kepala: 'Kepala SMB',
+  wakil_pgtksd: 'Wakil Kurikulum PG TK SD',
+  wakil_smpsma: 'Wakil Kurikulum SMP SMA',
+  wakil_sarpras: 'Wakil Sarana Prasarana',
+  bendahara: 'Bendahara',
+  sekretaris: 'Sekretaris',
+};
 export const JENIS_IZIN = { sakit: 'Sakit', izin: 'Izin', tugas: 'Tugas lain' };
 
 export function inisial(nama) {

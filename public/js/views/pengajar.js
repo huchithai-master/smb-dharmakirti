@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import {
-  esc, ikon, chip, fmtTanggal, fmtBulan, fmtJam, bulanSingkat, peranLabel, inisial, toast, JENIS_IZIN, pasangPilihan,
+  esc, ikon, chip, fmtTanggal, fmtBulan, fmtJam, bulanSingkat, peranLabel, inisial, toast, JENIS_IZIN, JABATAN, pasangPilihan,
 } from '../ui.js';
 
 function infoSesi(s) {
@@ -84,6 +84,7 @@ export async function beranda(el, { ctx }) {
         <div class="tumpuk">
           <span class="sub">Namo Buddhaya,</span>
           <span style="font-size:19px;font-weight:700">${esc(me.nama)}</span>
+          ${me.jabatan && JABATAN[me.jabatan] ? `<span class="kecil" style="opacity:.92;font-weight:700">${esc(JABATAN[me.jabatan])}</span>` : ''}
           <span class="kecil" style="opacity:.92">${me.level ? peranLabel(me.level) : ''}${me.tipe === 'cadangan' ? ' cadangan' : ''}</span>
         </div>
       </div>

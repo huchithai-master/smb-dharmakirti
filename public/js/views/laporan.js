@@ -93,7 +93,7 @@ export async function rekapMuridCetak(el, { query, ctx }) {
 
   el.innerHTML = `
     <div class="no-print alat-cetak">
-      <a class="btn btn-netral btn-kecil" href="#/admin/lainnya" style="width:auto">${ikon.kembali(18)} Kembali</a>
+      <a class="btn btn-netral btn-kecil" href="${ctx.me.is_admin ? '#/admin/lainnya' : '#/kepala/lainnya'}" style="width:auto">${ikon.kembali(18)} Kembali</a>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
         <label class="sr-only" for="bulan">Bulan</label>
         <input class="input" type="month" id="bulan" value="${bulan}" style="height:40px;width:auto">
@@ -166,7 +166,7 @@ export async function rekapCetak(el, { query, ctx }) {
 
   el.innerHTML = `
     <div class="no-print alat-cetak">
-      <a class="btn btn-netral btn-kecil" href="#/admin/lainnya" style="width:auto">${ikon.kembali(18)} Kembali</a>
+      <a class="btn btn-netral btn-kecil" href="${ctx.me.is_admin ? '#/admin/lainnya' : '#/kepala/lainnya'}" style="width:auto">${ikon.kembali(18)} Kembali</a>
       <div style="display:flex;gap:8px;align-items:center">
         <label class="sr-only" for="bulan">Bulan</label>
         <input class="input" type="month" id="bulan" value="${bulan}" style="height:40px;width:auto">

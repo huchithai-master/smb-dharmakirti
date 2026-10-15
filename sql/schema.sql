@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS pengguna (
   gagal_login INTEGER NOT NULL DEFAULT 0,
   kunci_sampai TEXT,
   dibuat TEXT NOT NULL DEFAULT to_char(now() AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD'),
-  jabatan TEXT CHECK (jabatan IN ('kepala', 'wakil', 'bendahara', 'sekretaris'))
+  jabatan TEXT CHECK (jabatan IN ('kepala', 'wakil_pgtksd', 'wakil_smpsma', 'wakil_sarpras', 'bendahara', 'sekretaris'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS pengguna_nip ON pengguna (nip) WHERE nip IS NOT NULL;
 

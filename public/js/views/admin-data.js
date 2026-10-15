@@ -1,33 +1,18 @@
 import { api } from '../api.js';
-import { esc, ikon, fmtJam, peranLabel, inisial, toast, NAMA_HARI, fmtTanggal } from '../ui.js';
+import { JABATAN, esc, ikon, fmtJam, peranLabel, inisial, toast, NAMA_HARI, fmtTanggal } from '../ui.js';
 import { subNav } from './admin.js';
 import { waktuServer } from '../app.js';
 
 const hdrKembali = (judul, ke) =>
   `<div class="hdr-putih"><div class="baris"><a class="btn-kembali" href="${ke}" aria-label="Kembali">${ikon.kembali()}</a><h1>${esc(judul)}</h1></div></div>`;
 
-export async function lainnya(el, { ctx }) {
-  const bulanIni = ctx.waktu.tanggal.slice(0, 7);
-  const item = (href, ik, judul, sub) => `
+export const menuItem = (href, ik, judul, sub) => `
     <a href="${href}"><span class="ikon-kotak">${ik}</span>
       <span class="tumpuk"><span class="tebal" style="font-size:15px">${judul}</span><span class="kecil muted">${sub}</span></span>
       <span class="muted">${ikon.kanan()}</span></a>`;
-  el.innerHTML = `
-    <div class="hdr-putih"><div class="baris"><h1>Admin</h1></div></div>
-    <div class="isi">
-      ${subNav('lainnya')}
-      <span class="label-kecil">Data master</span>
-      <div class="menu-grup">
-        ${item('#/admin/pengguna', ikon.orang2(), 'Data Pembina &amp; Asisten', 'Pembina, asisten, cadangan, petugas & admin')}
-        ${item('#/admin/murid', ikon.orang(), 'Data Murid', 'NIK, kelas, orang tua, dan asal sekolah')}
-        ${item('#/admin/libur', ikon.kalender(), 'Hari Libur', 'Libur harian dengan alasan dan libur semester')}
-        ${item('#/admin/kelas', ikon.buku(), 'Kelas', 'Daftar kelas Sekolah Minggu')}
-        ${item('#/admin/slot', ikon.jam(), 'Slot &amp; Mode Absen', 'Jam sesi, jendela scan, konfirmasi atau absen masuk')}
-      </div>
-      ${ctx.waktu?.demo_tersedia ? `<span class="label-kecil">Uji coba (hanya server lokal)</span>
-      <div class="menu-grup">
-        ${item('#/admin/waktu', ikon.kalender(), 'Simulasi Waktu', 'Ubah tanggal &amp; jam server untuk mencoba demo di hari lain')}
-      </div>` : ''}
+
+// Honor, pengajuan, dan rekap bulanan: dipakai halaman Lainnya milik admin dan Kepala SMB.
+export const blokHonorLaporan = (item, bulanIni) => `
       <span class="label-kecil">Honor</span>
       <div class="menu-grup">
         ${item('#/admin/honor', ikon.dokumen(), 'Honor &amp; Pengajuan', 'Rekap honor dari absensi dan surat permohonan pencairan')}
@@ -46,8 +31,9 @@ export async function lainnya(el, { ctx }) {
         <a class="btn btn-utama" id="rekap-murid" href="#/admin/rekap-murid/cetak?bulan=${bulanIni}">${ikon.dokumen(20)} Rekap Murid PDF (dengan materi)</a>
         <span class="kecil muted">Absensi tiap siswa per kelas, plus materi yang diajarkan pada setiap pertemuan.</span>
       </div>
-    </div>`;
+`;
 
+export function pasangLaporan(el) {
   el.querySelector('#bulan').addEventListener('change', (e) => {
     el.querySelector('#unduh').href = `/api/admin/laporan.csv?bulan=${e.target.value}`;
     el.querySelector('#rekap-pdf').href = `#/admin/rekap/cetak?bulan=${e.target.value}`;
@@ -55,6 +41,31 @@ export async function lainnya(el, { ctx }) {
   el.querySelector('#bulan-murid').addEventListener('change', (e) => {
     el.querySelector('#rekap-murid').href = `#/admin/rekap-murid/cetak?bulan=${e.target.value}`;
   });
+}
+
+export async function lainnya(el, { ctx }) {
+  const bulanIni = ctx.waktu.tanggal.slice(0, 7);
+  const item = menuItem;
+  el.innerHTML = `
+    <div class="hdr-putih"><div class="baris"><h1>Admin</h1></div></div>
+    <div class="isi">
+      ${subNav('lainnya')}
+      <span class="label-kecil">Data master</span>
+      <div class="menu-grup">
+        ${item('#/admin/pengguna', ikon.orang2(), 'Data Pembina &amp; Asisten', 'Pembina, asisten, cadangan, petugas & admin')}
+        ${item('#/admin/murid', ikon.orang(), 'Data Murid', 'NIK, kelas, orang tua, dan asal sekolah')}
+        ${item('#/admin/libur', ikon.kalender(), 'Hari Libur', 'Libur harian dengan alasan dan libur semester')}
+        ${item('#/admin/kelas', ikon.buku(), 'Kelas', 'Daftar kelas Sekolah Minggu')}
+        ${item('#/admin/slot', ikon.jam(), 'Slot &amp; Mode Absen', 'Jam sesi, jendela scan, konfirmasi atau absen masuk')}
+      </div>
+      ${ctx.waktu?.demo_tersedia ? `<span class="label-kecil">Uji coba (hanya server lokal)</span>
+      <div class="menu-grup">
+        ${item('#/admin/waktu', ikon.kalender(), 'Simulasi Waktu', 'Ubah tanggal &amp; jam server untuk mencoba demo di hari lain')}
+      </div>` : ''}
+      ${blokHonorLaporan(item, bulanIni)}
+    </div>`;
+
+  pasangLaporan(el);
 }
 
 export async function daftarPengguna(el) {
@@ -86,7 +97,7 @@ export async function daftarPengguna(el) {
   const lencana = (u) => {
     if (!u.aktif) return '<span class="chip chip-abu">Nonaktif</span>';
     if (!u.sudah_aktivasi) return '<span class="chip chip-kuning">Belum aktivasi</span>';
-    if (u.jabatan) return `<span class="chip chip-izin">${{ kepala: 'Kepala SMB', wakil: 'Wakil Kepala', bendahara: 'Bendahara', sekretaris: 'Sekretaris' }[u.jabatan]}</span>`;
+    if (u.jabatan) return `<span class="chip chip-izin">${JABATAN[u.jabatan] ?? u.jabatan}</span>`;
     if (!u.is_pengajar) return `<span class="chip chip-abu">${u.is_admin ? 'Admin' : 'Petugas'}</span>`;
     if (u.tipe === 'cadangan') return '<span class="chip chip-abu">Cadangan</span>';
     return `<span class="chip ${u.level === 'guru' ? 'chip-hadir' : 'chip-izin'}">${peranLabel(u.level)}</span>`;
@@ -166,10 +177,10 @@ export async function formPengguna(el, { params, ctx }) {
         <label class="cek"><input type="checkbox" id="is_admin" ${u.is_admin ? 'checked' : ''}><span class="tumpuk"><span class="tebal">Admin</span><span class="kecil muted">Kelola data, izin, pengganti & laporan</span></span></label>
         <div class="field"><label for="jabatan">Jabatan pengurus</label>
           <select class="input" id="jabatan">
-            ${[['', 'Tidak ada'], ['kepala', 'Kepala SMB'], ['wakil', 'Wakil Kepala SMB'], ['bendahara', 'Bendahara'], ['sekretaris', 'Sekretaris']]
+            ${[['', 'Tidak ada'], ...Object.entries(JABATAN)]
               .map(([v, l]) => `<option value="${v}" ${(u.jabatan ?? '') === v ? 'selected' : ''}>${l}</option>`).join('')}
           </select>
-          <span class="kecil muted">Jabatan mendapat operasional tetap bulanan; bila mengajar hanya mendapat transport per hari.</span></div>
+          <span class="kecil muted">Jabatan mendapat operasional tetap bulanan; bila mengajar hanya mendapat transport per hari. Kepala SMB yang memutus izin dan mengatur tugas pengganti.</span></div>
       </section>
       <section class="kartu" id="bagian-pengajar">
         <span class="label-kecil">Peran mengajar</span>

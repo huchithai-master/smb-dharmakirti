@@ -20,7 +20,7 @@ export async function honor(el, { query, ctx }) {
   const berjalan = d.bulan === d.hari_ini.slice(0, 7);
 
   el.innerHTML = `
-    ${hdrKembali('Honor & Pengajuan', '#/admin/lainnya')}
+    ${hdrKembali('Honor & Pengajuan', ctx.me.is_admin ? '#/admin/lainnya' : '#/kepala/lainnya')}
     <div class="isi">
       <div class="field"><label for="bulan">Periode</label><input class="input" type="month" id="bulan" value="${d.bulan}"></div>
       ${berjalan ? `<div class="info info-oranye">${ikon.info()}<span>Bulan ${esc(fmtBulan(d.bulan))} masih berjalan, angka bisa bertambah sampai akhir bulan.</span></div>` : ''}
@@ -39,7 +39,7 @@ export async function honor(el, { query, ctx }) {
       ${d.baris.length
         ? `<a class="btn btn-utama" href="#/admin/honor/cetak?bulan=${d.bulan}">${ikon.dokumen(20)} ${d.surat ? 'Cetak ulang surat permohonan' : 'Buat surat permohonan (PDF)'}</a>`
         : ''}
-      <a class="btn btn-garis btn-kecil" href="#/admin/honor/pengaturan">Atur tarif &amp; kop surat</a>
+      ${ctx.me.is_admin ? '<a class="btn btn-garis btn-kecil" href="#/admin/honor/pengaturan">Atur tarif &amp; kop surat</a>' : ''}
       <h2 class="judul-seksi">Rincian per orang (${d.baris.length})</h2>
       ${d.baris.map((r) => `
         <div class="kartu rapat">
