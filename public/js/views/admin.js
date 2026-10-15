@@ -18,7 +18,7 @@ function tabSlot(slots, slotId) {
 }
 
 export async function dashboard(el, { query, ctx }) {
-  const d = await api(`/api/admin/dashboard?${qs({ tanggal: query.tanggal, slot_id: query.slot })}`);
+  const d = await api(`/api/admin/dashboard?${qs({ slot_id: query.slot })}`);
   const slot = d.slots.find((s) => s.id === d.slot_id);
   const r = d.data?.ringkasan;
   // Ringkasan kehadiran: pembina, asisten, dan murid (dihitung dari semua kelas di slot ini).
@@ -59,8 +59,6 @@ export async function dashboard(el, { query, ctx }) {
       <div class="baris-antara" style="align-items:flex-end">
         <div class="tumpuk"><span class="sub">${esc(fmtTanggal(d.tanggal))}</span>
           <h1>${d.tanggal === d.hari_ini ? 'Kehadiran Hari Ini' : 'Kehadiran'}</h1></div>
-        <label class="sr-only" for="tgl">Pilih tanggal</label>
-        <input type="date" id="tgl" value="${d.tanggal}" class="input" style="width:auto;height:40px;font-size:13px;border:none;color:var(--teks);padding:0 10px">
       </div>
     </div>
     <div class="angkat">${d.slots.length ? tabSlot(d.slots, d.slot_id) : (d.libur ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span><span class="kecil muted">${d.libur.jenis === 'semester' ? 'Libur semester' : 'Libur harian'} · tidak ada sesi dan tidak ada alpa.</span></div>` : '<div class="kartu bayang"><span class="muted">Tidak ada sesi di tanggal ini.</span></div>')}</div>
@@ -85,8 +83,7 @@ export async function dashboard(el, { query, ctx }) {
         }).join('') || '<div class="kosong">Belum ada pengajar terjadwal di slot ini.</div>'}` : ''}
     </div>`;
 
-  const ke = (o) => ctx.pergi(`/admin?${qs({ tanggal: d.tanggal, slot: d.slot_id, ...o })}`);
-  el.querySelector('#tgl').addEventListener('change', (e) => e.target.value && ke({ tanggal: e.target.value, slot: null }));
+  const ke = (o) => ctx.pergi(`/admin?${qs({ slot: d.slot_id, ...o })}`);
   el.addEventListener('click', async (e) => {
     const s = e.target.closest('[data-slot]');
     if (s) return ke({ slot: s.dataset.slot });
