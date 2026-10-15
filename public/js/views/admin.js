@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { esc, ikon, chip, logoImg, fmtTanggal, fmtJam, peranLabel, toast, JENIS_IZIN } from '../ui.js';
+import { esc, ikon, chip, fmtTanggal, fmtJam, peranLabel, toast, JENIS_IZIN } from '../ui.js';
 
 export function subNav(aktif) {
   const item = [['dashboard', '#/admin', 'Dashboard'], ['tugas', '#/admin/tugas', 'Atur Tugas'], ['lainnya', '#/admin/lainnya', 'Lainnya']];
@@ -29,7 +29,7 @@ export async function dashboard(el, { query, ctx }) {
   el.innerHTML = `
     <div class="hdr" style="padding-bottom:60px">
       <div class="hdr-atas">
-        <div class="merek">${logoImg(34)} SMB Dharmakirti <span class="lencana">Admin</span></div>
+        <div class="merek">${ikon.teratai()} SMB Dharmakirti <span class="lencana">Admin</span></div>
         <a class="btn-ikon-terang" href="#/petugas" aria-label="Buka layar Petugas QR">${ikon.qr()}</a>
       </div>
       <div class="baris-antara" style="align-items:flex-end">
@@ -59,7 +59,7 @@ export async function dashboard(el, { query, ctx }) {
           const lengkap = perlu.length && hadir === perlu.length;
           return `<div class="kartu rapat">
             <div class="baris-antara"><span style="font-size:15px;font-weight:800">${esc(k.nama)}</span>
-              <span class="kecil tebal" style="color:${lengkap ? 'var(--hijau-teks)' : 'var(--oranye)'}">${!k.anggota.length ? 'Belum ada pengajar' : lengkap ? 'Lengkap' : `${hadir}/${perlu.length} hadir`}</span></div>
+              <span class="kecil tebal" style="color:${lengkap ? 'var(--hijau-teks)' : 'var(--oranye)'}">${lengkap ? 'Lengkap' : `${hadir}/${perlu.length} hadir`}</span></div>
             ${k.catatan.map((c) => `<span class="info info-ungu" style="padding:5px 10px">${esc(c)}</span>`).join('')}
             ${k.siswa?.total ? `<span class="kecil muted">Siswa: ${k.siswa.tercatat ? `${k.siswa.hadir} dari ${k.siswa.total} hadir` : 'absensi belum diisi'}${k.materi ? ' · Materi: ' + esc(k.materi) : ''}</span>` : ''}
             ${k.anggota.map((a) => `<div class="baris-orang"><div class="tumpuk"><span class="nama">${esc(a.nama)}</span>

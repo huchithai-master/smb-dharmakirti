@@ -173,13 +173,6 @@ CREATE TABLE IF NOT EXISTS pengajuan_honor (
   dibuat_oleh INTEGER REFERENCES pengguna(id) ON DELETE SET NULL
 );
 
--- Kelas terdaftar di sesi mana (Pagi/Siang). Satu kelas boleh di beberapa sesi.
-CREATE TABLE IF NOT EXISTS kelas_slot (
-  kelas_id INTEGER NOT NULL REFERENCES kelas(id) ON DELETE CASCADE,
-  slot_id INTEGER NOT NULL REFERENCES slot(id) ON DELETE CASCADE,
-  PRIMARY KEY (kelas_id, slot_id)
-);
-
 -- Pengguna yang diakses lewat API publik Supabase (PostgREST) tidak boleh membaca tabel ini:
 -- aplikasi memakai koneksi database langsung dari server, jadi RLS dinyalakan tanpa kebijakan apa pun.
 ALTER TABLE pengguna ENABLE ROW LEVEL SECURITY;
@@ -196,4 +189,3 @@ ALTER TABLE materi ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sesi_login ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pengaturan ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pengajuan_honor ENABLE ROW LEVEL SECURITY;
-ALTER TABLE kelas_slot ENABLE ROW LEVEL SECURITY;

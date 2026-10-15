@@ -291,12 +291,50 @@ select.input { padding-right: 8px; }
 #toast.galat { background: var(--merah); }
 
 /* ---------- Login ---------- */
-.login-hdr { padding: 48px 24px 72px; align-items: flex-start; }
-.login-hdr .logo { width: auto; height: auto; border-radius: 0; background: none; display: flex; align-items: center; justify-content: center; }
-.logo-img { display: block; flex: 0 0 auto; }
-.logo-kop { height: 28mm; width: auto; flex: 0 0 auto; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.rekap .logo-kop { height: 22mm; }
-.login-hdr h1 { font-size: 26px; }
+/* Layar masuk, selamat datang, dan aktivasi: latar biru navy dengan pola stupa dan lengkung putih */
+.auth { --navy: #1b2b63; flex: 1; display: flex; flex-direction: column; background: #fff; }
+.auth-hero { position: relative; background: var(--navy); color: #fff; overflow: hidden; flex: 0 0 auto; }
+.auth-hero.besar { height: clamp(360px, 58dvh, 500px); display: flex; align-items: center; justify-content: center; padding-bottom: 56px; }
+.auth-hero.kecil { padding: 48px 32px 112px; }
+.auth-pola { position: absolute; inset: 0; width: 100%; height: 100%; }
+.auth-gelombang { position: absolute; left: 0; bottom: -1px; width: 100%; height: 88px; display: block; }
+.auth-logo-besar { position: relative; width: 160px; height: auto; }
+.auth-merek { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.auth-logo-kecil { width: 64px; height: auto; }
+.auth-nama { font-size: 22px; font-weight: 800; letter-spacing: 0.2px; }
+.auth-sub { font-size: 14px; color: rgba(255, 255, 255, 0.85); }
+.auth-isi { flex: 1; display: flex; flex-direction: column; padding: 0 32px; gap: 18px; }
+.auth-isi form { display: flex; flex-direction: column; gap: 18px; }
+.auth-isi form.auth-aktivasi { gap: 14px; padding-bottom: 24px; }
+.auth-judul { font-size: 32px; line-height: 1.15; font-weight: 800; color: #2b2f3a; }
+.auth-teks { margin: 0; font-size: 15px; line-height: 1.55; color: var(--muted); }
+.auth-selamat { gap: 12px; padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+.auth-lanjut {
+  margin-top: auto; align-self: flex-end; display: inline-flex; align-items: center; gap: 12px; min-height: 56px;
+  background: none; border: none; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--muted); padding: 0;
+}
+.auth-panah { width: 56px; height: 56px; border-radius: 28px; background: var(--navy); display: flex; align-items: center; justify-content: center; }
+.auth-judul-baris { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.auth-garis { width: 52px; height: 3px; border-radius: 2px; background: var(--navy); }
+.u-field { display: flex; flex-direction: column; gap: 2px; }
+.u-field > label { font-size: 14px; font-weight: 600; color: #2b2f3a; }
+.u-baris { display: flex; align-items: center; gap: 10px; min-height: 48px; border-bottom: 2px solid #d5d9e3; color: var(--muted); }
+.u-baris:focus-within { border-bottom-color: var(--navy); color: var(--navy); }
+.u-baris input { flex: 1; min-width: 0; height: 44px; border: 0; background: transparent; font-size: 16px; color: #2b2f3a; }
+.u-baris input:focus { outline: none; }
+.u-baris input::placeholder { color: var(--muted); }
+.u-baris input[type="password"] { letter-spacing: 4px; }
+.u-mata { width: 44px; height: 44px; margin-right: -10px; border: 0; background: transparent; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.u-mata:focus-visible, .u-lupa:focus-visible, .auth-tombol:focus-visible, .auth-lanjut:focus-visible, .u-cek input:focus-visible { outline: 3px solid rgba(27, 43, 99, 0.35); outline-offset: 2px; border-radius: 8px; }
+.u-sela { display: flex; align-items: center; justify-content: space-between; margin-top: -6px; }
+.u-cek { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; font-weight: 600; color: #2b2f3a; cursor: pointer; }
+.u-cek input { width: 18px; height: 18px; margin: 0; accent-color: var(--navy); }
+.u-lupa { min-height: 44px; padding: 0; border: 0; background: none; font-size: 13px; font-weight: 800; color: var(--navy); cursor: pointer; }
+.auth-tombol { min-height: 56px; border: 0; border-radius: 10px; background: var(--navy); color: #fff; font-size: 17px; font-weight: 800; cursor: pointer; }
+.auth-tombol:hover:not(:disabled) { background: #14224f; }
+.auth-tombol:disabled { cursor: not-allowed; opacity: 0.6; }
+.auth-kaki { margin: 0; padding-bottom: calc(24px + env(safe-area-inset-bottom)); text-align: center; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.auth .input:focus { outline-color: rgba(27, 43, 99, 0.35); border-color: var(--navy); }
 
 /* ---------- Scan ---------- */
 .layar-gelap { background: #0f1512; color: #fff; flex: 1; display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
@@ -348,7 +386,7 @@ select.input { padding-right: 8px; }
 .surat p { margin: 0 0 10pt; }
 .surat .kanan { text-align: right; }
 .kop { display: flex; align-items: center; gap: 16px; padding-bottom: 8pt; border-bottom: 3px double #111; margin-bottom: 14pt; }
-.kop svg, .kop img { flex: 0 0 auto; }
+.kop svg { flex: 0 0 auto; }
 .kop-teks { flex: 1; text-align: center; font-size: 10.5pt; line-height: 1.35; }
 .kop-nama { font-size: 16pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #0369a1; }
 .kop-vihara { font-size: 12.5pt; font-weight: 700; }

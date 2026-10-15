@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import {
-  esc, ikon, chip, logoImg, fmtTanggal, fmtBulan, fmtJam, bulanSingkat, peranLabel, inisial, toast, JENIS_IZIN, pasangPilihan,
+  esc, ikon, chip, fmtTanggal, fmtBulan, fmtJam, bulanSingkat, peranLabel, inisial, toast, JENIS_IZIN, pasangPilihan,
 } from '../ui.js';
 
 function infoSesi(s) {
@@ -76,7 +76,7 @@ export async function beranda(el, { ctx }) {
   el.innerHTML = `
     <div class="hdr">
       <div class="hdr-atas">
-        <div class="merek">${logoImg(34)} SMB Dharmakirti</div>
+        <div class="merek">${ikon.teratai()} SMB Dharmakirti</div>
         <a class="btn-ikon-terang" href="#/akun" aria-label="Akun saya">${ikon.orang()}</a>
       </div>
       <div class="sapaan">

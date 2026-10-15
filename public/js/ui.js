@@ -18,9 +18,6 @@ export const fmtBulan = (b) => {
 };
 export const bulanSingkat = (t) => BULAN[Number(t.slice(5, 7)) - 1].slice(0, 3);
 export const fmtJam = (j) => (j ? j.replace(':', '.') : '');
-// Logo SMB Dharmakirti (tinggi dalam px). Berkas ada di /icons.
-export const logoImg = (tinggi = 30) =>
-  `<img class="logo-img" src="/icons/logo-kecil.png" alt="Logo SMB Dharmakirti" height="${tinggi}" style="height:${tinggi}px;width:auto">`;
 export const peranLabel = (p) => (p === 'guru' ? 'Pembina' : 'Asisten');
 export const JENIS_IZIN = { sakit: 'Sakit', izin: 'Izin', tugas: 'Tugas lain' };
 

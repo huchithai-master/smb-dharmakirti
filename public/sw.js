@@ -1,6 +1,6 @@
 // Service worker: menyimpan tampilan aplikasi agar cepat dibuka dan tetap tampil saat sinyal lemah.
 // Data (/api/) selalu diambil dari server dan tidak disimpan.
-const VERSI = 'smbh-v8';
+const VERSI = 'smbh-v7';
 const ASET = [
   '/',
   '/index.html',
@@ -20,9 +20,9 @@ const ASET = [
   '/js/views/siswa.js',
   '/vendor/qrcode.js',
   '/vendor/jsQR.js',
-  '/icons/logo.png',
-  '/icons/logo-kecil.png',
+  '/icons/icon.svg',
   '/icons/icon-192.png',
+  '/icons/logo-smb.png',
 ];
 
 self.addEventListener('install', (e) => {
