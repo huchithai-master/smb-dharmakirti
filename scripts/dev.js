@@ -4,6 +4,7 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import os from 'node:os';
 import { tanganiApi } from '../lib/app.js';
 import { siapkan } from '../lib/db.js';
 
@@ -39,4 +40,12 @@ const server = http.createServer(async (req, res) => {
 
 await siapkan();
 const port = Number(process.env.PORT || 3000);
-server.listen(port, () => console.log(`SMB Dharmakirti (lokal) di http://localhost:${port}`));
+server.listen(port, '0.0.0.0', () => {
+  console.log(`SMB Dharmakirti (lokal) di http://localhost:${port}`);
+  const lan = Object.values(os.networkInterfaces()).flat().filter((i) => i.family === 'IPv4' && !i.internal).map((i) => i.address);
+  if (lan.length) {
+    console.log('\nDari HP (satu WiFi), buka salah satu:');
+    for (const ip of lan) console.log(`  http://${ip}:${port}`);
+    console.log('Catatan: kamera/scan di HP butuh HTTPS. Jalankan jalankan-hp.bat untuk alamat https.');
+  }
+});

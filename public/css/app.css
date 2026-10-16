@@ -298,6 +298,7 @@ input.input[type="datetime-local"]::-webkit-date-and-time-value { text-align: le
 .nav-bawah a {
   min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   text-decoration: none; color: var(--muted); font-size: 12px; font-weight: 600;
+  white-space: nowrap; padding: 0 2px; min-width: 0;
 }
 .nav-bawah a[aria-current='page'] { color: var(--utama); font-weight: 700; }
 

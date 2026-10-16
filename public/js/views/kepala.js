@@ -80,6 +80,8 @@ export async function lainnya(el, { ctx }) {
     <div class="hdr-putih"><div class="baris"><h1>Kepala SMB</h1></div></div>
     <div class="isi">
       ${subNavKepala('lainnya')}
+      <span class="label-kecil">Murid</span>
+      <div class="menu-grup">${menuItem('#/admin/murid', ikon.orang2(), 'Data Murid', 'Daftar semua murid di semua kelas')}</div>
       ${blokHonorLaporan(menuItem, bulanIni)}
     </div>`;
   pasangLaporan(el);

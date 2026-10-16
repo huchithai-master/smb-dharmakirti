@@ -30,8 +30,8 @@ const RUTE = [
   { path: '/', view: pengajar.beranda, perlu: 'is_pengajar', nav: 'beranda' },
   { path: '/scan', view: scan.scan, perlu: 'is_pengajar', polos: true },
   { path: '/siswa', view: siswa.absenSiswa, perlu: 'is_pengajar', nav: 'beranda' },
-  { path: '/murid', view: siswa.muridPembina, perlu: 'is_pengajar', nav: 'murid' },
-  { path: '/murid/:id', view: siswa.formMuridPembina, perlu: 'is_pengajar', nav: 'murid' },
+  { path: '/murid', view: siswa.muridPembina, perlu: 'bisa_murid', nav: 'murid' },
+  { path: '/murid/:id', view: siswa.formMuridPembina, perlu: 'bisa_murid', nav: 'murid' },
   { path: '/riwayat', view: pengajar.riwayat, perlu: 'is_pengajar', nav: 'riwayat' },
   { path: '/izin', view: pengajar.izin, perlu: 'is_pengajar', nav: 'izin' },
   { path: '/akun', view: pengajar.akun, perlu: 'login', nav: 'akun' },
@@ -43,8 +43,8 @@ const RUTE = [
   { path: '/admin/lainnya', view: data.lainnya, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/pengguna', view: data.daftarPengguna, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/pengguna/:id', view: data.formPengguna, perlu: 'is_admin', nav: 'admin' },
-  { path: '/admin/murid', view: siswa.daftarMurid, perlu: 'is_admin', nav: 'admin' },
-  { path: '/admin/murid/:id', view: siswa.formMurid, perlu: 'is_admin', nav: 'admin' },
+  { path: '/admin/murid', view: siswa.daftarMurid, perlu: 'bisa_laporan', nav: 'admin' },
+  { path: '/admin/murid/:id', view: siswa.formMurid, perlu: 'bisa_laporan', nav: 'admin' },
   { path: '/admin/libur', view: siswa.libur, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/kelas', view: data.kelas, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/slot', view: data.slot, perlu: 'is_admin', nav: 'admin' },
@@ -93,7 +93,8 @@ function navBawah(aktif) {
   const item = [];
   if (m.is_pengajar) {
     item.push(['beranda', '#/', ikon.rumah(), 'Beranda']);
-    if (m.level === 'guru') item.push(['murid', '#/murid', ikon.orang2(), 'Data Murid']);
+    // Data Murid pembina: pembina kedua/cadangan hanya melihatnya saat bertugas; Kepala SMB lewat Kepala SMB > Lainnya.
+    if (m.bisa_murid) item.push(['murid', '#/murid', ikon.orang2(), 'Data Murid']);
     item.push(['riwayat', '#/riwayat', ikon.jam(), 'Riwayat']);
     item.push(['izin', '#/izin', ikon.dokumen(), 'Izin']);
   }
@@ -123,6 +124,8 @@ let nomorRender = 0;
 
 async function render() {
   const nomor = ++nomorRender;
+  // Status "sedang bertugas" (tab Data Murid) bisa berubah: segarkan data akun bila sudah lebih dari semenit.
+  if (ctx.me && Date.now() - ctx.dimuat > 60_000) { try { await muatMe(); } catch { /* abaikan */ } }
   const { path, query } = bacaHash();
   let rute = RUTE.find((r) => r.pola.test(path));
   if (!rute) return ctx.pergi(rumah());

@@ -112,14 +112,14 @@ export async function absenSiswa(el, { query, ctx }) {
 }
 
 // ---- Admin: data murid ----
-export async function daftarMurid(el) {
+export async function daftarMurid(el, { ctx }) {
   const { murid, kelas } = await api('/api/admin/murid');
   let cari = '';
   let filter = 0;
 
   el.innerHTML = `
     <div class="hdr-putih">
-      <div class="baris"><a class="btn-kembali" href="#/admin/lainnya" aria-label="Kembali">${ikon.kembali()}</a><h1>Data Murid</h1></div>
+      <div class="baris"><a class="btn-kembali" href="${ctx.me.is_admin ? '#/admin/lainnya' : '#/kepala/lainnya'}" aria-label="Kembali">${ikon.kembali()}</a><h1>Data Murid</h1></div>
       <div style="padding:0 4px"><label class="sr-only" for="cari">Cari</label>
         <input class="input" id="cari" type="search" placeholder="Cari nama atau NIK" style="background:#f7f8f9"></div>
       <div class="chips" id="filter" style="padding:0 4px">
