@@ -22,7 +22,7 @@ export async function petugas(el, { ctx, query }) {
 
   const slotAwal = sesi.slots.find((s) => s.id === Number(query.slot)) ?? sesi.slots.find((s) => s.status_slot === 'buka')
     ?? sesi.slots.find((s) => s.status_slot === 'nanti') ?? sesi.slots[sesi.slots.length - 1];
-  const st = { slot: slotAwal, kelasId: null, jendela: null, progres: null, offline: false };
+  const st = { slot: slotAwal, kelasId: null, jendela: null, progres: null, offline: false, dikenal: null, antrean: [] };
   let wakeLock = null;
   let detik = null;
   let segar = null;
@@ -95,8 +95,8 @@ export async function petugas(el, { ctx, query }) {
     const ditunggu = s.mode === 'konfirmasi' && kelas
       ? `<div class="info info-utama" style="align-self:stretch;flex-direction:column;gap:6px">
           <span class="kecil tebal">SEDANG DI KELAS ${esc(kelas.nama.toUpperCase())}</span>
-          ${kelas.anggota.map((a) => `<div class="baris-antara sedang" style="width:100%"><span><b>${esc(a.nama)}</b> <span class="muted">· ${peranLabel(a.peran)}${a.keterangan ? ' · ' + esc(a.keterangan) : ''}</span></span>
-            <span class="tebal" style="color:${warnaStatus(a.status)}">${a.status === 'hadir' || a.status === 'terlambat' ? 'Sudah scan' : a.status === 'izin' ? 'Izin' : 'Menunggu'}</span></div>`).join('')}
+          ${kelas.anggota.filter(sudahScan).sort((x, y) => String(y.jam).localeCompare(String(x.jam))).map((a) => `<div class="baris-antara sedang" style="width:100%"><span><b>${esc(a.nama)}</b> <span class="muted">· ${peranLabel(a.peran)}</span></span>
+            <span class="tebal" style="color:${warnaStatus(a.status)}">${a.jam ? fmtJam(a.jam) : 'Sudah scan'}</span></div>`).join('') || '<span class="sedang muted">Belum ada yang scan.</span>'}
         </div>`
       : '';
     return `
@@ -123,23 +123,24 @@ export async function petugas(el, { ctx, query }) {
         <div class="baris-antara"><h2 class="judul-seksi" style="margin:0">Rute kelas</h2><span class="sedang tebal" style="color:var(--utama)">${selesai} / ${total} terkonfirmasi</span></div>
         ${p.kelas.map((k) => {
           const n = sudah(k), t = butuh(k).length, lengkap = n === t, pilih = k.id === st.kelasId;
-          const belum = butuh(k).filter((a) => a.status !== 'hadir' && a.status !== 'terlambat').map((a) => a.nama);
           const catatan = [...k.catatan, ...k.anggota.filter((a) => a.status === 'izin').map((a) => `${a.nama} izin`)];
           return `<button class="opsi rute-kelas" data-kelas="${k.id}" aria-pressed="${pilih}">
             <span class="mark ${lengkap ? 'lengkap' : ''}">${lengkap ? '✓' : t - n}</span>
             <span class="tumpuk"><span class="nama">${esc(k.nama)}</span>
-              <span class="kecil muted">${pilih ? 'Sedang di sini' : lengkap ? 'Lengkap' : 'Belum: ' + esc(belum.join(', '))}${catatan.length ? ' · ' + esc(catatan.join(', ')) : ''}</span></span>
+              <span class="kecil muted">${pilih ? 'Sedang di sini' : lengkap ? 'Lengkap' : ''}${catatan.length ? (pilih || lengkap ? ' · ' : '') + esc(catatan.join(', ')) : ''}</span></span>
             <span class="sedang tebal" style="color:${lengkap ? 'var(--hijau-teks)' : 'var(--abu)'}">${n}/${t}</span>
           </button>`;
         }).join('')}`;
     }
-    const semua = p.kelas.flatMap((k) => k.anggota.map((a) => ({ ...a, kelas: k.nama })));
+    const semua = p.kelas.flatMap((k) => k.anggota.map((a) => ({ ...a, kelas: k.nama })))
+      .filter((a) => a.status === 'hadir' || a.status === 'terlambat')
+      .sort((x, y) => String(y.jam).localeCompare(String(x.jam)));
     return `
       <div class="kartu">
         <div class="baris-antara"><span class="tebal">Sudah scan</span><span style="font-size:20px;font-weight:800">${selesai}<span class="sedang muted"> / ${total} pengajar</span></span></div>
         <div class="batang"><div style="width:${total ? Math.round((selesai / total) * 100) : 0}%"></div></div>
         ${semua.map((a) => `<div class="baris-antara sedang"><span><b>${esc(a.nama)}</b> <span class="muted">· ${peranLabel(a.peran)} · ${esc(a.kelas)}</span></span>
-          <span class="tebal" style="color:${warnaStatus(a.status)}">${a.jam ? fmtJam(a.jam) + (a.status === 'terlambat' ? ' (terlambat)' : '') : a.status === 'izin' ? 'Izin' : 'Menunggu'}</span></div>`).join('')}
+          <span class="tebal" style="color:${warnaStatus(a.status)}">${a.jam ? fmtJam(a.jam) + (a.status === 'terlambat' ? ' (terlambat)' : '') : ''}</span></div>`).join('') || '<div class="kosong" style="padding:12px">Belum ada yang scan.</div>'}
       </div>`;
   }
 
@@ -153,7 +154,7 @@ export async function petugas(el, { ctx, query }) {
       target.innerHTML = await buatQr(jendela);
     }
     const sisa = Math.ceil((sesi.window_ms - (sekarang % sesi.window_ms)) / 1000);
-    el.querySelector('#hitung').textContent = `0:${String(sisa % 60).padStart(2, '0')}`.replace('0:00', '1:00');
+    el.querySelector('#hitung').textContent = `0:${String(sisa % 60).padStart(2, '0')}`;
     el.querySelector('#batang-hitung').style.width = `${(sisa / (sesi.window_ms / 1000)) * 100}%`;
   }
 
@@ -165,9 +166,59 @@ export async function petugas(el, { ctx, query }) {
     gambarQr(true);
   }
 
+  const kunciA = (k, a) => `${k.id}|${a.nama}|${a.peran}`;
+  const sudahScan = (a) => a.status === 'hadir' || a.status === 'terlambat';
+
+  function tampilPopup() {
+    const lama = el.querySelector('#popup-scan');
+    if (!st.antrean.length) { lama?.remove(); return; }
+    if (lama) return;
+    const a = st.antrean[0];
+    const w = document.createElement('div');
+    w.id = 'popup-scan';
+    w.className = 'modal-latar';
+    w.innerHTML = `<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="popup-judul">
+      <div class="modal-centang">✓</div>
+      <span class="kecil tebal muted" id="popup-judul">BERHASIL SCAN</span>
+      <span class="modal-nama">${esc(a.nama)}</span>
+      <span class="sedang"><b>${peranLabel(a.peran)}</b> · Kelas ${esc(a.kelas)}</span>
+      <span class="kecil muted">${a.jam ? fmtJam(a.jam) : ''}${a.status === 'terlambat' ? ' (terlambat)' : ''}</span>
+      ${st.antrean.length > 1 ? `<span class="kecil muted">${st.antrean.length - 1} lagi menunggu</span>` : ''}
+      <button class="btn btn-utama" id="popup-ok">Konfirmasi</button></div>`;
+    el.appendChild(w);
+    w.querySelector('#popup-ok').onclick = () => {
+      st.antrean.shift();
+      w.remove();
+      if (st.antrean.length) tampilPopup();
+      else gambarQr(true); // lanjut ke barcode berikutnya
+    };
+    w.querySelector('#popup-ok').focus();
+  }
+
+  function deteksiBaru() {
+    if (!st.progres) return;
+    const sekarang = new Set();
+    const baru = [];
+    for (const k of st.progres.kelas) {
+      for (const a of k.anggota) {
+        if (!sudahScan(a)) continue;
+        const kk = kunciA(k, a);
+        sekarang.add(kk);
+        if (st.dikenal && !st.dikenal.has(kk)) baru.push({ ...a, kelas: k.nama });
+      }
+    }
+    st.dikenal = sekarang;
+    baru.sort((x, y) => String(x.jam).localeCompare(String(y.jam)));
+    st.antrean.push(...baru);
+    if (baru.length) tampilPopup();
+  }
+
   async function muatProgres() {
+    const slotId = st.slot.id;
     try {
-      st.progres = await api(`/api/petugas/progres?slot_id=${st.slot.id}`);
+      const data = await api(`/api/petugas/progres?slot_id=${slotId}`);
+      if (slotId !== st.slot.id) return; // slot sudah diganti
+      st.progres = data;
       st.offline = false;
       if (st.slot.mode === 'konfirmasi' && !st.kelasId) {
         st.kelasId = st.progres.kelas.find((k) => k.anggota.some((a) => a.status === 'belum'))?.id ?? st.progres.kelas[0]?.id ?? null;
@@ -175,14 +226,18 @@ export async function petugas(el, { ctx, query }) {
     } catch {
       st.offline = true;
     }
+    deteksiBaru();
     progresEl.innerHTML = progresHtml();
-    gambarKartu();
+    if (!el.querySelector('#popup-scan') || !el.querySelector('#qr')) gambarKartu();
   }
 
   function gantiSlot(slot) {
     st.slot = slot;
     st.kelasId = null;
     st.progres = null;
+    st.dikenal = null;
+    st.antrean = [];
+    el.querySelector('#popup-scan')?.remove();
     header();
     progresEl.innerHTML = progresHtml();
     gambarKartu();
@@ -220,7 +275,7 @@ export async function petugas(el, { ctx, query }) {
     if (statusSlotSekarang(st.slot) !== statusTerakhir) gambarKartu();
     else gambarQr();
   }, 1000);
-  segar = setInterval(muatProgres, 10000);
+  segar = setInterval(muatProgres, 3000);
 
   return () => {
     clearInterval(detik);

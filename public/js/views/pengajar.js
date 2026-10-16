@@ -45,7 +45,7 @@ function kartuSesi(s, bisaScan, namaSaya) {
     aksi = `<button class="btn btn-abu" disabled>Scan dibuka pukul ${fmtJam(s.scan_mulai)}</button>`;
   }
   let siswa = '';
-  if (bisaScan && s.peran === 'guru') {
+  if (bisaScan && s.peran === 'guru' && s.bisa_absen_murid) {
     const sudahAbsen = s.status === 'hadir' || s.status === 'terlambat';
     const tercatat = s.siswa?.tercatat > 0;
     if (sudahAbsen) {

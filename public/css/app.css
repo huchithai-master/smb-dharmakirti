@@ -487,3 +487,10 @@ input.input[type="datetime-local"]::-webkit-date-and-time-value { text-align: le
 }
 
 .tautan-undangan { word-break: break-all; font-size: 13px; background: #f7f8f9; border: 1px dashed var(--garis-input); border-radius: 10px; padding: 10px 12px; }
+
+/* Popup konfirmasi scan (Petugas QR) */
+.modal-latar { position: fixed; inset: 0; z-index: 50; background: rgba(17,24,39,.55); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal { background: #fff; border-radius: 20px; padding: 24px 20px 20px; width: min(340px, 100%); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; box-shadow: 0 20px 50px rgba(17,24,39,.35); }
+.modal .btn { align-self: stretch; margin-top: 14px; }
+.modal-centang { width: 56px; height: 56px; border-radius: 28px; background: var(--hijau-muda); color: var(--hijau-teks); font-size: 30px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+.modal-nama { font-size: 22px; font-weight: 800; color: var(--utama); line-height: 1.25; }

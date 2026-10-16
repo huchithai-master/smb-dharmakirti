@@ -30,7 +30,7 @@ export async function scan(el) {
           </div>
           <div style="text-align:center;display:flex;flex-direction:column;gap:6px">
             <span style="font-size:17px;font-weight:700">Arahkan kamera ke QR petugas</span>
-            <span class="sedang muted-gelap" id="status" style="line-height:1.5">${esc(pesan || 'QR berganti otomatis setiap 60 detik. Pastikan QR terlihat utuh di dalam kotak.')}</span>
+            <span class="sedang muted-gelap" id="status" style="line-height:1.5">${esc(pesan || 'QR berganti otomatis setiap 30 detik. Pastikan QR terlihat utuh di dalam kotak.')}</span>
           </div>
         </div>
         <div style="padding:16px 16px 28px">
