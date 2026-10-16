@@ -99,7 +99,7 @@ function formMasuk(el, ctx) {
             <label for="hp">No. HP</label>
             <div class="u-baris">
               ${IKON_HP}
-              <input id="hp" type="tel" inputmode="tel" autocomplete="username" placeholder="08xxxxxxxxxx" required>
+              <input id="hp" type="tel" inputmode="tel" autocomplete="username" required>
             </div>
           </div>
           <div class="u-field">

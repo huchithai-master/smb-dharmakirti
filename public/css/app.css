@@ -495,3 +495,11 @@ input.input[type="datetime-local"]::-webkit-date-and-time-value { text-align: le
 .modal .btn { align-self: stretch; margin-top: 14px; }
 .modal-centang { width: 56px; height: 56px; border-radius: 28px; background: var(--hijau-muda); color: var(--hijau-teks); font-size: 30px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
 .modal-nama { font-size: 22px; font-weight: 800; color: var(--utama); line-height: 1.25; }
+
+/* Tim kelas pada Atur Tugas */
+.tim-kelas { gap: 2px; }
+.tim-kelas .orang { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid #f0f1f3; }
+.tim-kelas .orang .tumpuk { flex: 1; min-width: 0; }
+.tim-kelas .orang .nama { font-size: 15px; font-weight: 700; }
+.tim-kelas .orang.diganti { background: var(--ungu-bg); border-radius: 12px; padding: 10px 12px; margin: 4px -6px; border-top-color: transparent; }
+.tim-kelas .asisten-ringkas { display: flex; flex-direction: column; gap: 3px; padding-top: 10px; border-top: 1px solid #f0f1f3; margin-top: 2px; }

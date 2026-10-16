@@ -129,7 +129,6 @@ export async function tugas(el, { query, ctx }) {
       ${!slot ? '<div class="kosong">Tidak ada sesi Sekolah Minggu di tanggal ini.</div>'
         : tertutup ? `<div class="info info-abu">${ikon.info()}<span>Sesi ini sudah selesai, penugasan tidak bisa diubah lagi.</span></div>`
         : '<div id="form-tugas" class="tumpuk" style="gap:12px"></div>'}
-      ${slot && mode === 'kedua' ? ringkasPembina(d) : ''}
       ${slot ? `<h2 class="judul-seksi">${mode === 'pengganti' ? 'Pengganti' : mode === 'kedua' ? 'Pembina kedua (harian)' : 'Pindahan'} di sesi ini</h2><div class="tumpuk" style="gap:10px" id="daftar">${htmlTugas}</div>` : ''}
       <div class="info info-abu">${ikon.info()}<span>${mode === 'pengganti'
         ? 'Penugasan bukan input kehadiran. Pengganti tetap harus scan QR pada hari H.'
@@ -162,23 +161,32 @@ export async function tugas(el, { query, ctx }) {
   else formPindah(wadah, d, query, ctx);
 }
 
-// Ringkasan pembina per kelas pada tanggal + sesi yang dipilih.
-function ringkasPembina(d) {
-  const label = { tetap: 'Tetap', pengganti: 'Pengganti', tambahan: 'Tambahan', pindah: 'Pindahan' };
-  return `
-    <div class="kartu rapat">
-      <span class="label-kecil">Pembina per kelas di sesi ini</span>
-      ${d.kelas.map((k) => {
-        const p = d.kelas_pembina?.[k.id] ?? [];
-        const aktif = p.filter((x) => x.status !== 'izin').length;
-        return `<div class="baris-antara" style="align-items:flex-start">
-          <span class="tebal">${esc(k.nama)}</span>
-          <span class="kecil" style="text-align:right">${p.length
-            ? p.map((x) => `${esc(x.nama)} <span class="muted">(${label[x.jenis] ?? x.jenis}${x.status === 'izin' ? ', izin' : ''})</span>`).join('<br>')
-            : '<span class="muted">Belum ada pembina</span>'}${aktif >= 2 ? '<br><b style="color:var(--hijau-teks)">Lengkap, 2 pembina</b>' : ''}</span>
-        </div>`;
-      }).join('')}
-    </div>`;
+// Siapa yang bertugas di satu kelas pada sesi ini: pembina (baris rapi, dengan status) dan asisten (ringkas).
+function timKelas(d, kelasId, { ganti = null, kapasitas = false } = {}) {
+  const tim = d.kelas_tim?.[kelasId] ?? [];
+  const nama = d.kelas.find((k) => k.id === kelasId)?.nama ?? '';
+  const JENIS = { tetap: 'Pembina tetap', tambahan: 'Pembina kedua', pengganti: 'Pengganti', pindah: 'Pindahan' };
+  const STAT = { izin: ['Izin', 'izin'], hadir: ['Hadir', 'hadir'], terlambat: ['Terlambat', 'kuning'], belum: ['Belum scan', 'abu'], nanti: ['Terjadwal', 'abu'], alpa: ['Alpa', 'alpa'] };
+  const pembina = tim.filter((a) => a.peran === 'guru');
+  const asisten = tim.filter((a) => a.peran === 'asisten');
+  const aktif = pembina.filter((a) => a.status !== 'izin').length;
+  const baris = (a) => {
+    const [label, warna] = STAT[a.status] ?? ['-', 'abu'];
+    const diganti = ganti && a.pengguna_id === ganti;
+    return `<div class="orang${diganti ? ' diganti' : ''}">
+      <span class="avatar kecil">${esc(a.nama.split(' ').slice(0, 2).map((x) => x[0]).join('').toUpperCase())}</span>
+      <div class="tumpuk"><span class="nama">${esc(a.nama)}</span>
+        <span class="kecil muted">${diganti ? 'Perlu pengganti · ' : ''}${JENIS[a.jenis] ?? 'Pembina'}</span></div>
+      <span class="chip chip-${warna}">${label}</span></div>`;
+  };
+  const kap = kapasitas
+    ? `<span class="chip ${aktif >= 2 ? 'chip-hadir' : 'chip-kuning'}">${aktif >= 2 ? 'Lengkap' : `${aktif} dari 2 pembina`}</span>` : '';
+  return `<section class="kartu tim-kelas" aria-label="Pembina kelas ${esc(nama)}">
+    <div class="baris-antara"><span class="label-kecil">Pembina kelas ${esc(nama)} saat ini</span>${kap}</div>
+    ${pembina.length ? pembina.map(baris).join('') : '<div class="kosong" style="padding:10px">Kelas ini belum punya pembina.</div>'}
+    ${asisten.length ? `<div class="asisten-ringkas"><span class="label-kecil">Asisten (${asisten.length})</span>
+      <span class="kecil">${asisten.map((a) => esc(a.nama) + (a.status === 'izin' ? ' <span class="muted">(izin)</span>' : '')).join(', ')}</span></div>` : ''}
+  </section>`;
 }
 
 async function formKedua(wadah, d, query, ctx) {
@@ -194,7 +202,10 @@ async function formKedua(wadah, d, query, ctx) {
   wadah.innerHTML = `
     <div class="kartu">
       <div class="field"><label for="kelas">Kelas</label><select class="input" id="kelas">
-        ${dengan1.map((k) => `<option value="${k.id}" ${k.id === kelasId ? 'selected' : ''}>${esc(k.nama)} · pembina: ${esc((d.kelas_pembina[k.id] ?? []).filter((x) => x.status !== 'izin').map((x) => x.nama).join(', '))}</option>`).join('')}</select></div>
+        ${dengan1.map((k) => `<option value="${k.id}" ${k.id === kelasId ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select></div>
+    </div>
+    <div id="tim-kelas">${timKelas(d, kelasId, { kapasitas: true })}</div>
+    <div class="kartu">
       <div class="field"><span class="label">Berlaku</span><div class="seg" id="lingkup">
         <button type="button" data-t="0" aria-pressed="true">Tanggal ini saja</button>
         <button type="button" data-t="1" aria-pressed="false">Tetap setiap Minggu</button></div>
@@ -233,6 +244,7 @@ async function formKedua(wadah, d, query, ctx) {
 
   wadah.querySelector('#kelas').addEventListener('change', (e) => {
     kelasId = Number(e.target.value);
+    wadah.querySelector('#tim-kelas').innerHTML = timKelas(d, kelasId, { kapasitas: true });
     muat();
   });
   wadah.addEventListener('click', (e) => {
@@ -288,6 +300,7 @@ async function formPengganti(wadah, d, query, ctx) {
       </div>
       ${ganti ? `<div class="info info-ungu">${ikon.info()}<span>Menggantikan pengajar yang izin di kelas ini.</span></div>` : ''}
     </div>
+    <div id="tim-kelas">${timKelas(d, kelasId, { ganti })}</div>
     <div id="kandidat" class="tumpuk" style="gap:8px"><div class="kosong">Memuat calon…</div></div>
     <button class="btn btn-utama" id="tugaskan" disabled>Pilih pengganti dulu</button>`;
 
@@ -313,6 +326,7 @@ async function formPengganti(wadah, d, query, ctx) {
 
   wadah.querySelector('#kelas').addEventListener('change', (e) => {
     kelasId = Number(e.target.value);
+    wadah.querySelector('#tim-kelas').innerHTML = timKelas(d, kelasId, { ganti });
     muat();
   });
   wadah.addEventListener('click', async (e) => {
