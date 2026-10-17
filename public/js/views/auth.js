@@ -4,6 +4,21 @@ import { esc, ikon } from '../ui.js';
 const LOGO = '/icons/logo-smb.png';
 const ALT_LOGO = 'Logo Sekolah Minggu Buddha Vihara Dharmakirti Palembang';
 const KUNCI_SELAMAT_DATANG = 'smb_selamat_datang';
+// "Ingat saya": No. HP dan PIN terakhir disimpan di perangkat ini saja (localStorage), bukan di server.
+const KUNCI_INGAT = 'smb_ingat_login';
+function bacaIngat() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KUNCI_INGAT) || 'null');
+    if (d && typeof d.hp === 'string' && typeof d.pin === 'string') return d;
+  } catch { /* penyimpanan diblokir atau rusak */ }
+  return null;
+}
+function simpanIngat(hp, pin) {
+  try { localStorage.setItem(KUNCI_INGAT, JSON.stringify({ hp, pin })); } catch { /* abaikan */ }
+}
+function hapusIngat() {
+  try { localStorage.removeItem(KUNCI_INGAT); } catch { /* abaikan */ }
+}
 
 // Pola stupa berulang untuk latar biru navy (tiga salinan per ubin supaya tersusun selang-seling).
 const POLA_STUPA = `
@@ -111,7 +126,7 @@ function formMasuk(el, ctx) {
             </div>
           </div>
           <div class="u-sela">
-            <label class="u-cek"><input type="checkbox" id="ingat" checked> Ingat saya</label>
+            <label class="u-cek"><input type="checkbox" id="ingat"> Ingat saya</label>
             <button class="u-lupa" type="button" id="lupa" aria-expanded="false" aria-controls="info-lupa">Lupa PIN?</button>
           </div>
           <div class="info info-abu" id="info-lupa" hidden>${ikon.info()}<span>Minta admin mengirim link undangan baru lewat WhatsApp untuk membuat PIN baru.</span></div>
@@ -122,6 +137,12 @@ function formMasuk(el, ctx) {
     </div>`;
 
   const form = el.querySelector('#form-login');
+  const tersimpan = bacaIngat();
+  if (tersimpan) {
+    form.hp.value = tersimpan.hp;
+    form.pin.value = tersimpan.pin;
+    form.ingat.checked = true;
+  }
   const galat = el.querySelector('#galat');
   const pinEl = el.querySelector('#pin');
   const mata = el.querySelector('#mata');
@@ -154,10 +175,12 @@ function formMasuk(el, ctx) {
     tombol.textContent = 'Memeriksa…';
     try {
       await api('/api/login', { method: 'POST', body: { hp, pin, ingat: form.ingat.checked } });
+      if (form.ingat.checked) simpanIngat(hp, pin); else hapusIngat();
       await ctx.segarkanMe();
       location.hash = '/';
     } catch (err) {
       galat.textContent = err.message;
+      if (form.ingat.checked) hapusIngat(); // PIN tersimpan ternyata salah: jangan dipakai lagi
       form.pin.value = '';
       form.pin.focus();
     } finally {

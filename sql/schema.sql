@@ -129,6 +129,7 @@ CREATE TABLE IF NOT EXISTS murid (
   nama_ortu TEXT NOT NULL,
   hp_ortu TEXT NOT NULL,
   asal_sekolah TEXT NOT NULL,
+  alamat TEXT,
   aktif INTEGER NOT NULL DEFAULT 1,
   dibuat TEXT NOT NULL DEFAULT to_char(now() AT TIME ZONE 'Asia/Jakarta', 'YYYY-MM-DD')
 );

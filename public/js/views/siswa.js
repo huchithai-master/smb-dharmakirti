@@ -32,7 +32,7 @@ export async function absenSiswa(el, { query, ctx }) {
         </div>
         <button class="btn btn-utama" type="button" id="simpan-absen">Simpan absensi</button>
       </section>` : `
-      <div class="info info-abu">${ikon.info()}<span>Belum ada siswa terdaftar di kelas ${esc(d.kelas_nama)}. Minta admin menambahkan di Data Murid.</span></div>`}
+      <div class="info info-abu">${ikon.info()}<span>Belum ada siswa terdaftar di kelas ${esc(d.kelas_nama)}. Tambahkan murid lewat tab Data Murid.</span></div>`}
       <section class="kartu" id="bagian-materi">
         <span class="label-kecil">${d.murid.length ? '2. ' : ''}Materi hari ini</span>
         <div class="info info-abu" id="kunci">${ikon.info()}<span>Simpan absensi siswa dulu, lalu isi materi yang diajarkan.</span></div>
@@ -169,12 +169,13 @@ function bagianMurid(m, kelas) {
         <div class="field"><label for="nama">Nama lengkap siswa</label><input class="input" id="nama" maxlength="80" value="${esc(m.nama)}" required></div>
         <div class="field"><label for="kelas">Kelas</label>
           <select class="input" id="kelas">${kelas.map((k) => `<option value="${k.id}" ${k.id === m.kelas_id ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select></div>
-        <div class="grid2">
+        <div class="grid2 kolom-hp">
           <div class="field"><label for="tempat">Tempat lahir</label><input class="input" id="tempat" maxlength="60" value="${esc(m.tempat_lahir)}" required></div>
           <div class="field"><label for="lahir">Tanggal lahir</label><input class="input" type="date" id="lahir" value="${esc(m.tanggal_lahir)}" required></div>
         </div>
         <div class="field"><label for="hp">No. HP siswa <span class="muted" style="font-weight:500">(opsional)</span></label>
           <input class="input" id="hp" type="tel" inputmode="tel" value="${esc(m.hp ?? '')}" placeholder="08xxxxxxxxxx"></div>
+        <div class="field"><label for="alamat">Alamat siswa</label><textarea class="input" id="alamat" rows="2" maxlength="200" placeholder="Alamat tempat tinggal saat ini" required>${esc(m.alamat ?? '')}</textarea></div>
         <div class="field"><label for="asal">Asal sekolah</label><input class="input" id="asal" maxlength="80" value="${esc(m.asal_sekolah)}" placeholder="Belum sekolah bila belum bersekolah" required></div>
       </section>
       <section class="kartu">
@@ -189,7 +190,7 @@ export async function formMurid(el, { params, ctx }) {
   const baru = params.id === 'baru';
   const r = baru ? { kelas: (await api('/api/admin/murid')).kelas, murid: null } : await api(`/api/admin/murid/${encodeURIComponent(params.id)}`);
   const m = r.murid ?? {
-    nik: '', nama: '', kelas_id: r.kelas[0]?.id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', aktif: true,
+    nik: '', nama: '', kelas_id: r.kelas[0]?.id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', alamat: '', aktif: true,
   };
 
   el.innerHTML = `
@@ -214,7 +215,7 @@ export async function formMurid(el, { params, ctx }) {
     const body = {
       nik: $('nik').value, nama: $('nama').value, kelas_id: Number($('kelas').value), tempat_lahir: $('tempat').value,
       tanggal_lahir: $('lahir').value, hp: $('hp').value, nama_ortu: $('ortu').value, hp_ortu: $('hportu').value,
-      asal_sekolah: $('asal').value, aktif: baru ? true : $('aktif').checked,
+      asal_sekolah: $('asal').value, alamat: $('alamat').value, aktif: baru ? true : $('aktif').checked,
     };
     const tombol = $('simpan');
     tombol.disabled = true;
@@ -319,7 +320,7 @@ export async function formMuridPembina(el, { params, ctx }) {
   const r = baru ? await api('/api/pembina/murid') : await api(`/api/pembina/murid/${encodeURIComponent(params.id)}`);
   const kelas = r.kelas;
   if (!kelas.length) return ctx.pergi('/murid');
-  const m = r.murid ?? { nik: '', nama: '', kelas_id: kelas[0].id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', aktif: true };
+  const m = r.murid ?? { nik: '', nama: '', kelas_id: kelas[0].id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', alamat: '', aktif: true };
 
   el.innerHTML = `
     ${hdrKembali(baru ? 'Tambah Murid' : 'Data Murid', '#/murid', baru ? '' : (m.aktif ? 'Aktif' : 'Di arsip'))}
@@ -351,7 +352,7 @@ export async function formMuridPembina(el, { params, ctx }) {
     const body = {
       nik: $('nik').value, nama: $('nama').value, kelas_id: Number($('kelas').value), tempat_lahir: $('tempat').value,
       tanggal_lahir: $('lahir').value, hp: $('hp').value, nama_ortu: $('ortu').value, hp_ortu: $('hportu').value,
-      asal_sekolah: $('asal').value, aktif: baru ? true : m.aktif,
+      asal_sekolah: $('asal').value, alamat: $('alamat').value, aktif: baru ? true : m.aktif,
     };
     const tombol = $('simpan');
     tombol.disabled = true;
@@ -413,7 +414,7 @@ export async function libur(el, { ctx }) {
           <button type="button" data-j="harian" aria-pressed="true">Libur harian</button>
           <button type="button" data-j="semester" aria-pressed="false">Libur semester</button>
         </div>
-        <div class="grid2">
+        <div class="grid2 kolom-hp">
           <div class="field"><label for="mulai" id="l-mulai">Tanggal</label><input class="input" type="date" id="mulai" min="${d.hari_ini}" required></div>
           <div class="field" id="bagian-selesai" hidden><label for="selesai">Sampai tanggal</label><input class="input" type="date" id="selesai" min="${d.hari_ini}"></div>
         </div>

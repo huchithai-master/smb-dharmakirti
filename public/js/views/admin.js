@@ -133,8 +133,8 @@ export async function tugas(el, { query, ctx }) {
       <div class="info info-abu">${ikon.info()}<span>${mode === 'pengganti'
         ? 'Penugasan bukan input kehadiran. Pengganti tetap harus scan QR pada hari H.'
         : mode === 'kedua'
-        ? 'Satu kelas boleh punya sampai 2 pembina, dan hanya admin yang bisa menetapkan pembina kedua. Pembina kedua tetap harus scan QR dan ikut mendapat honor pembina.'
-        : 'Hanya admin yang bisa memindahkan asisten. Hari itu asisten hanya bisa scan di kelas tujuan.'}</span></div>
+        ? 'Satu kelas boleh punya sampai 2 pembina, dan hanya Kepala SMB yang bisa menetapkan pembina kedua. Pembina kedua tetap harus scan QR dan ikut mendapat honor pembina.'
+        : 'Hanya Kepala SMB yang bisa memindahkan asisten. Hari itu asisten hanya bisa scan di kelas tujuan.'}</span></div>
     </div>`;
 
   el.querySelector('#tgl').addEventListener('change', (e) => e.target.value && ke({ tanggal: e.target.value, slot: null, kelas: null, ganti: null }));

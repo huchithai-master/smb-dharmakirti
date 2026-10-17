@@ -84,12 +84,26 @@ export async function petugas(el, { ctx, query }) {
     const s = st.slot;
     const status = statusSlotSekarang(s);
     if (status !== 'buka') {
-      return `<div class="kosong" style="padding:20px 8px">${status === 'nanti'
-        ? `QR akan muncul pukul <b>${fmtJam(s.scan_mulai)}</b>.<br>Biarkan halaman ini terbuka.`
-        : `Waktu scan Slot ${esc(s.nama)} sudah ditutup pukul ${fmtJam(s.scan_selesai)}.`}</div>`;
+      return status === 'nanti'
+        ? `<div class="qr-info">
+            <span class="qr-info-ikon">${ikon.jam(28)}</span>
+            <span class="qr-info-judul">QR akan muncul pukul</span>
+            <span class="qr-info-jam">${fmtJam(s.scan_mulai)}</span>
+            <span class="qr-info-teks">Biarkan halaman ini terbuka. QR tampil sendiri saat jam scan dimulai.</span>
+          </div>`
+        : `<div class="qr-info">
+            <span class="qr-info-ikon qr-info-abu">${ikon.centang(28)}</span>
+            <span class="qr-info-judul">Waktu scan sudah ditutup</span>
+            <span class="qr-info-jam qr-info-abu">${fmtJam(s.scan_selesai)}</span>
+            <span class="qr-info-teks">Slot ${esc(s.nama)} tidak menerima scan lagi.</span>
+          </div>`;
     }
     if (s.mode === 'konfirmasi' && !st.kelasId) {
-      return `<div class="kosong" style="padding:20px 8px">Pilih kelas yang sedang Anda datangi di daftar <b>Rute kelas</b> di bawah.</div>`;
+      return `<div class="qr-info">
+        <span class="qr-info-ikon">${ikon.qr(28)}</span>
+        <span class="qr-info-judul">Pilih kelas dulu</span>
+        <span class="qr-info-teks">Ketuk kelas yang sedang Anda datangi di daftar <b>Rute kelas</b> di bawah, lalu QR akan tampil.</span>
+      </div>`;
     }
     const kelas = st.progres?.kelas.find((k) => k.id === st.kelasId);
     const ditunggu = s.mode === 'konfirmasi' && kelas

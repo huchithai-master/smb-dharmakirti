@@ -193,7 +193,7 @@ export async function izin(el) {
   el.innerHTML = `
     <div class="hdr-putih"><div class="baris"><div class="tumpuk" style="padding-left:8px">
       <h1 style="padding-left:0">Ajukan Izin</h1>
-      <span class="kecil muted">Ajukan sebelum hari mengajar agar admin bisa menunjuk pengganti</span>
+      <span class="kecil muted">Ajukan sebelum hari mengajar agar Kepala SMB bisa menunjuk pengganti</span>
     </div></div></div>
     <div class="isi">
       <form class="kartu" id="form" novalidate>
@@ -250,7 +250,7 @@ export async function izin(el) {
     tombol.disabled = true;
     try {
       await api('/api/izin', { method: 'POST', body: { tanggal: form.tgl.value, slot_ids, jenis, alasan: form.alasan.value } });
-      toast('Pengajuan terkirim. Menunggu persetujuan admin.');
+      toast('Pengajuan terkirim. Menunggu persetujuan Kepala SMB.');
       form.reset();
       opsi.innerHTML = '<span class="kecil muted">Pilih tanggal dulu.</span>';
       muatDaftar();
