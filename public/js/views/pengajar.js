@@ -217,7 +217,13 @@ export async function izin(el) {
           <textarea class="input" id="alasan" rows="3" maxlength="300" placeholder="Contoh: ada acara keluarga di luar kota"></textarea></div>
         <button class="btn btn-utama" type="submit" id="kirim">Kirim Pengajuan</button>
       </form>
-      <h2 class="judul-seksi">Pengajuan saya</h2>
+      <h2 class="judul-seksi">Izin saya per bulan</h2>
+      <div class="baris-antara" style="gap:8px">
+        <button type="button" class="btn-kembali" id="bln-mundur" aria-label="Bulan sebelumnya">${ikon.kiri()}</button>
+        <span class="tebal" id="bln-judul"></span>
+        <button type="button" class="btn-kembali" id="bln-maju" aria-label="Bulan berikutnya">${ikon.kanan()}</button>
+      </div>
+      <div id="ringkas" class="baris" style="gap:8px;flex-wrap:wrap"></div>
       <div id="daftar" class="tumpuk" style="gap:10px"></div>
     </div>`;
 
@@ -268,8 +274,21 @@ export async function izin(el) {
   });
 
   const daftar = el.querySelector('#daftar');
+  let bulan = d.bulan;
+  const geserBulan = (n) => {
+    const [y, m] = bulan.split('-').map(Number);
+    const t = new Date(Date.UTC(y, m - 1 + n, 1));
+    return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, '0')}`;
+  };
+  el.querySelector('#bln-mundur').addEventListener('click', () => { bulan = geserBulan(-1); muatDaftar(); });
+  el.querySelector('#bln-maju').addEventListener('click', () => { bulan = geserBulan(1); muatDaftar(); });
   async function muatDaftar() {
-    const r = await api('/api/izin');
+    const r = await api(`/api/izin?bulan=${bulan}`);
+    el.querySelector('#bln-judul').textContent = fmtBulan(r.bulan);
+    const hitung = (j) => r.izin.filter((i) => i.jenis === j && i.status !== 'ditolak').length;
+    el.querySelector('#ringkas').innerHTML = r.izin.length
+      ? Object.entries(JENIS_IZIN).map(([k, v]) => `<span class="chip chip-izin">${v}: ${hitung(k)}</span>`).join('')
+      : '';
     daftar.innerHTML = r.izin.length
       ? r.izin
           .map(
@@ -284,7 +303,7 @@ export async function izin(el) {
         </div>`,
           )
           .join('')
-      : '<div class="kosong">Belum ada pengajuan izin.</div>';
+      : '<div class="kosong">Tidak ada izin, sakit, atau tugas lain di bulan ini.</div>';
   }
   daftar.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-batal]');

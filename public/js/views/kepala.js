@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { esc, ikon, fmtTanggal, peranLabel, toast, inisial, JENIS_IZIN, JABATAN } from '../ui.js';
+import { esc, ikon, fmtTanggal, fmtBulan, peranLabel, toast, inisial, JENIS_IZIN, JABATAN } from '../ui.js';
 import { blokHonorLaporan, pasangLaporan, menuItem } from './admin-data.js';
 
 const qs = (o) => new URLSearchParams(Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== '')).toString();
@@ -14,10 +14,38 @@ export function subNavKepala(aktif, wakil = false) {
 }
 
 // ---- Beranda Kepala SMB: izin yang menunggu keputusan dan kelas yang butuh pembina pengganti ----
+let bulanIzin = null; // bulan yang sedang dilihat di rekap izin (null = bulan berjalan)
+const geserBulanIzin = (b, n) => {
+  const [y, m] = b.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1 + n, 1));
+  return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, '0')}`;
+};
+
+// Rekap izin sebulan: per orang, jumlah sakit/izin/tugas lain, lalu rincian tanggalnya.
+function rekapIzinHtml(r) {
+  const orang = new Map();
+  for (const i of r.izin) {
+    if (!orang.has(i.pengguna_id)) orang.set(i.pengguna_id, { nama: i.nama, baris: [] });
+    orang.get(i.pengguna_id).baris.push(i);
+  }
+  const hitung = (baris, j) => baris.filter((i) => i.jenis === j && i.status !== 'ditolak').length;
+  return [...orang.values()].map((o) => `
+    <div class="kartu rapat">
+      <div class="baris-antara"><span class="tebal">${esc(o.nama)}</span>
+        <span class="kecil muted">${Object.entries(JENIS_IZIN).map(([k, v]) => `${v} ${hitung(o.baris, k)}`).join(' · ')}</span></div>
+      ${o.baris.map((i) => `<div class="baris-antara sedang"><span>${esc(fmtTanggal(i.tanggal, 'pendek'))} · ${JENIS_IZIN[i.jenis]} · Slot ${esc(i.slot_nama)}${i.kelas_nama ? ' · ' + esc(i.kelas_nama) : ''}${i.alasan ? `<br><span class="kecil muted">"${esc(i.alasan)}"</span>` : ''}</span>
+        <span class="chip chip-${i.status === 'disetujui' ? 'izin' : i.status === 'ditolak' ? 'alpa' : 'abu'}">${i.status === 'menunggu' ? 'Menunggu' : i.status === 'disetujui' ? 'Disetujui' : 'Ditolak'}</span></div>`).join('')}
+    </div>`).join('') || '<div class="kosong" style="padding:12px">Tidak ada izin, sakit, atau tugas lain di bulan ini.</div>';
+}
+
 export async function beranda(el, { ctx }) {
   const wakil = !ctx.me.is_kepala;
   const P = wakil ? 'wakil' : 'kepala';
-  const d = await api(`/api/${P}/ringkasan`);
+  const [d, rekap] = await Promise.all([
+    api(`/api/${P}/ringkasan`),
+    api(`/api/${P}/izin-bulan${bulanIzin ? '?bulan=' + bulanIzin : ''}`),
+  ]);
+  bulanIzin = rekap.bulan;
   const tindakan = d.izin_menunggu.length + d.butuh_pengganti.length;
 
   el.innerHTML = `
@@ -57,9 +85,21 @@ export async function beranda(el, { ctx }) {
             <button class="btn btn-utama btn-kecil" data-izin="${i.id}" data-putus="disetujui">Setujui</button>
           </div>
         </div>`).join('') || `<div class="kosong" style="padding:12px">${tindakan ? 'Tidak ada izin yang menunggu.' : 'Tidak ada izin atau penggantian yang perlu diputuskan.'}</div>`}
+      <h2 class="judul-seksi">Rekap izin bulanan</h2>
+      <div class="baris-antara" style="gap:8px">
+        <button type="button" class="btn-kembali" data-bln="-1" aria-label="Bulan sebelumnya">${ikon.kiri()}</button>
+        <span class="tebal">${fmtBulan(rekap.bulan)}</span>
+        <button type="button" class="btn-kembali" data-bln="1" aria-label="Bulan berikutnya">${ikon.kanan()}</button>
+      </div>
+      ${rekapIzinHtml(rekap)}
     </div>`;
 
   el.addEventListener('click', async (e) => {
+    const n = e.target.closest('[data-bln]');
+    if (n) {
+      bulanIzin = geserBulanIzin(bulanIzin, Number(n.dataset.bln));
+      return ctx.muatUlang();
+    }
     const b = e.target.closest('[data-izin]');
     if (!b) return;
     b.disabled = true;
