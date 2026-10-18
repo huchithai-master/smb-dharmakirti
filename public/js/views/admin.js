@@ -89,15 +89,17 @@ export async function dashboard(el, { query, ctx }) {
     if (s) return ke({ slot: s.dataset.slot });
   });
 
-  const segar = setInterval(() => document.visibilityState === 'visible' && !el.querySelector(':focus') && ctx.muatUlang(), 30000);
+  const segar = setInterval(() => document.visibilityState === 'visible' && !el.querySelector(':focus') && ctx.muatUlangDiam(), 30000);
   return () => clearInterval(segar);
 }
 
+let P = 'kepala'; // 'kepala' atau 'wakil' (Wakil Kurikulum: hanya kelas jenjangnya)
 export async function tugas(el, { query, ctx }) {
+  P = ctx.me.is_kepala ? 'kepala' : 'wakil';
   const mode = ['pindah', 'kedua'].includes(query.mode) ? query.mode : 'pengganti';
-  const d = await api(`/api/kepala/tugas?${qs({ tanggal: query.tanggal, slot_id: query.slot })}`);
+  const d = await api(`/api/${P}/tugas?${qs({ tanggal: query.tanggal, slot_id: query.slot })}`);
   const slot = d.slots.find((s) => s.id === d.slot_id);
-  const ke = (o) => ctx.pergi(`/kepala/tugas?${qs({ mode, tanggal: d.tanggal, slot: d.slot_id, ...o })}`);
+  const ke = (o) => ctx.pergi(`/${P}/tugas?${qs({ mode, tanggal: d.tanggal, slot: d.slot_id, ...o })}`);
   const tertutup = d.status_slot === 'selesai';
 
   const daftarTugas = d.tugas.filter((t) => t.jenis === (mode === 'kedua' ? 'tambahan' : mode));
@@ -112,7 +114,7 @@ export async function tugas(el, { query, ctx }) {
 
   el.innerHTML = `
     <div class="hdr-putih">
-      <div class="baris"><a class="btn-kembali" href="#/kepala" aria-label="Kembali ke Beranda Kepala">${ikon.kembali()}</a><h1>Atur Tugas</h1></div>
+      <div class="baris"><a class="btn-kembali" href="#/${P}" aria-label="Kembali ke Beranda">${ikon.kembali()}</a><h1>Atur Tugas</h1></div>
       <div class="seg tab-abu" role="tablist" style="margin:0 4px">
         <button role="tab" data-mode="pengganti" aria-selected="${mode === 'pengganti'}">Pengganti</button>
         <button role="tab" data-mode="kedua" aria-selected="${mode === 'kedua'}">Pembina 2</button>
@@ -133,19 +135,19 @@ export async function tugas(el, { query, ctx }) {
       <div class="info info-abu">${ikon.info()}<span>${mode === 'pengganti'
         ? 'Penugasan bukan input kehadiran. Pengganti tetap harus scan QR pada hari H.'
         : mode === 'kedua'
-        ? 'Satu kelas boleh punya sampai 2 pembina, dan hanya Kepala SMB yang bisa menetapkan pembina kedua. Pembina kedua tetap harus scan QR dan ikut mendapat honor pembina.'
-        : 'Hanya Kepala SMB yang bisa memindahkan asisten. Hari itu asisten hanya bisa scan di kelas tujuan.'}</span></div>
+        ? 'Satu kelas boleh punya sampai 2 pembina, dan hanya Kepala SMB atau Wakil Kurikulum yang bisa menetapkan pembina kedua. Pembina kedua tetap harus scan QR dan ikut mendapat honor pembina.'
+        : 'Hanya Kepala SMB atau Wakil Kurikulum yang bisa memindahkan asisten. Hari itu asisten hanya bisa scan di kelas tujuan.'}</span></div>
     </div>`;
 
   el.querySelector('#tgl').addEventListener('change', (e) => e.target.value && ke({ tanggal: e.target.value, slot: null, kelas: null, ganti: null }));
   el.querySelector('#slot').addEventListener('change', (e) => ke({ slot: e.target.value, kelas: null, ganti: null }));
   el.addEventListener('click', async (e) => {
     const m = e.target.closest('[data-mode]');
-    if (m) return ctx.pergi(`/kepala/tugas?${qs({ mode: m.dataset.mode, tanggal: d.tanggal, slot: d.slot_id })}`);
+    if (m) return ctx.pergi(`/${P}/tugas?${qs({ mode: m.dataset.mode, tanggal: d.tanggal, slot: d.slot_id })}`);
     const h = e.target.closest('[data-hapus]');
     if (h && confirm('Batalkan penugasan ini?')) {
       try {
-        await api(`/api/kepala/tugas/${h.dataset.hapus}`, { method: 'DELETE' });
+        await api(`/api/${P}/tugas/${h.dataset.hapus}`, { method: 'DELETE' });
         toast('Penugasan dibatalkan.');
         ctx.muatUlang();
       } catch (err) {
@@ -228,7 +230,7 @@ async function formKedua(wadah, d, query, ctx) {
     tombol.disabled = true;
     tombol.textContent = 'Pilih pembina dulu';
     kandidatEl.innerHTML = '<div class="kosong">Memuat calon…</div>';
-    const k = await api(`/api/kepala/kandidat?${qs({ tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran: 'guru' })}`);
+    const k = await api(`/api/${P}/kandidat?${qs({ tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran: 'guru' })}`);
     const sala = (c) => !tetap || c.tipe === 'tetap';
     const grup = (judul, list) => {
       const l = list.filter(sala);
@@ -268,12 +270,12 @@ async function formKedua(wadah, d, query, ctx) {
     if (!confirm(`Setujui pembina kedua untuk kelas ${nama}?\n${tetap ? 'Berlaku tetap setiap Minggu.' : 'Hanya pada tanggal ini.'}`)) return;
     tombol.disabled = true;
     try {
-      await api('/api/kepala/pembina-kedua', {
+      await api(`/api/${P}/pembina-kedua`, {
         method: 'POST',
         body: { tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, pengguna_id: pilihan, tetap },
       });
       toast('Pembina kedua disetujui.');
-      ctx.pergi(`/kepala/tugas?${qs({ mode: 'kedua', tanggal: d.tanggal, slot: d.slot_id })}`);
+      ctx.pergi(`/${P}/tugas?${qs({ mode: 'kedua', tanggal: d.tanggal, slot: d.slot_id })}`);
     } catch (err) {
       toast(err.message, 'galat');
       tombol.disabled = false;
@@ -312,7 +314,7 @@ async function formPengganti(wadah, d, query, ctx) {
     tombol.disabled = true;
     tombol.textContent = 'Pilih pengganti dulu';
     kandidatEl.innerHTML = '<div class="kosong">Memuat calon…</div>';
-    const k = await api(`/api/kepala/kandidat?${qs({ tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran, menggantikan_id: ganti })}`);
+    const k = await api(`/api/${P}/kandidat?${qs({ tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran, menggantikan_id: ganti })}`);
     const grup = (judul, list) => list.length ? `<span class="label-kecil" style="margin-top:6px">${judul}</span>${list.map((c) => `
       <button class="opsi" data-calon="${c.pengguna_id}" data-nama="${esc(c.nama)}" aria-pressed="false">
         <span class="radio"></span>
@@ -347,12 +349,12 @@ async function formPengganti(wadah, d, query, ctx) {
   tombol.addEventListener('click', async () => {
     tombol.disabled = true;
     try {
-      await api('/api/kepala/pengganti', {
+      await api(`/api/${P}/pengganti`, {
         method: 'POST',
         body: { tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran, pengguna_id: pilihan, menggantikan_id: ganti },
       });
       toast('Pengganti ditugaskan.');
-      ctx.pergi(`/kepala/tugas?${qs({ mode: 'pengganti', tanggal: d.tanggal, slot: d.slot_id })}`);
+      ctx.pergi(`/${P}/tugas?${qs({ mode: 'pengganti', tanggal: d.tanggal, slot: d.slot_id })}`);
     } catch (err) {
       toast(err.message, 'galat');
       tombol.disabled = false;
@@ -390,7 +392,7 @@ function formPindah(wadah, d, query, ctx) {
 
   async function kirim(keKelas) {
     try {
-      await api('/api/kepala/pindah', { method: 'POST', body: { tanggal: d.tanggal, slot_id: d.slot_id, pengguna_id: asisten.pengguna_id, ke_kelas_id: keKelas } });
+      await api(`/api/${P}/pindah`, { method: 'POST', body: { tanggal: d.tanggal, slot_id: d.slot_id, pengguna_id: asisten.pengguna_id, ke_kelas_id: keKelas } });
       toast(keKelas === asisten.kelas_id ? 'Asisten dikembalikan ke kelas tetapnya.' : 'Asisten dipindahkan.');
       ctx.muatUlang();
     } catch (err) {

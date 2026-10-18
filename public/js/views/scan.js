@@ -61,6 +61,21 @@ export async function scan(el) {
     try {
       const r = await api('/api/scan', { method: 'POST', body: { token } });
       const a = r.absensi;
+      if (a.pulang) {
+        layarHasil(
+          true,
+          r.sudah ? 'Pulang sudah tercatat' : 'Pulang tercatat',
+          `<span class="sedang muted" style="margin-top:-12px">${r.sudah ? 'Absen pulang Anda sudah tercatat.' : 'Anumodana, terima kasih sudah mengajar hari ini.'}</span>
+           <div class="tabel-detail" style="align-self:stretch">
+             <div><span>Tanggal</span><span>${esc(fmtTanggal(a.tanggal, 'pendek'))}</span></div>
+             <div><span>Sesi</span><span>Slot ${esc(a.slot_nama)}</span></div>
+             <div><span>Kelas</span><span>${esc(a.kelas_nama)}</span></div>
+             <div><span>Jam pulang</span><span>${fmtJam(a.jam_pulang)}</span></div>
+           </div>`,
+          `<a class="btn btn-utama" href="#/">Kembali ke Beranda</a>`,
+        );
+        return;
+      }
       const label = a.mode === 'konfirmasi' ? 'Hadir · terkonfirmasi' : STATUS_TEKS[a.status];
       layarHasil(
         true,
@@ -131,7 +146,7 @@ export async function scan(el) {
       if (selesai || !stream) return;
       try {
         const hasil = await deteksi();
-        if (hasil && hasil.startsWith('SMBH1.')) return kirim(hasil);
+        if (hasil && /^SMBH[12]\./.test(hasil)) return kirim(hasil);
         if (hasil) el.querySelector('#status').textContent = 'Itu bukan QR SMB Dharmakirti. Arahkan ke QR di HP petugas.';
       } catch {
         // frame belum siap, coba lagi

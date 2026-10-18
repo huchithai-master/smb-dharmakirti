@@ -404,6 +404,14 @@ export async function slot(el, { ctx }) {
           </div>
           <div class="field"><label for="t-${s.id}">Toleransi terlambat (menit, untuk absen masuk)</label>
             <input class="input" type="number" min="0" max="120" id="t-${s.id}" name="toleransi_menit" value="${s.toleransi_menit}"></div>
+        <div class="tumpuk" style="gap:8px">
+          <span class="tebal sedang">Absen pulang <span class="muted" style="font-weight:500">(opsional, hanya mode Absen masuk)</span></span>
+          <div class="grid2">
+            <div class="field"><label for="pm-${s.id}">Pulang dibuka</label><input class="input" type="time" id="pm-${s.id}" name="pulang_mulai" value="${s.pulang_mulai ?? ''}"></div>
+            <div class="field"><label for="ps-${s.id}">Pulang ditutup</label><input class="input" type="time" id="ps-${s.id}" name="pulang_selesai" value="${s.pulang_selesai ?? ''}"></div>
+          </div>
+          <span class="kecil muted">Isi untuk slot yang juga memakai absen pulang (mis. kelas siang). Petugas menampilkan QR pulang di jam ini. Kosongkan keduanya bila tidak ada absen pulang.</span>
+        </div>
           <button class="btn btn-utama btn-kecil" type="submit">Simpan Slot ${esc(s.nama)}</button>
         </form>`).join('')}
       <form class="kartu" data-slot="baru" style="border-style:dashed">
@@ -424,6 +432,14 @@ export async function slot(el, { ctx }) {
         </div>
         <div class="field"><label for="t-baru">Toleransi terlambat (menit, untuk absen masuk)</label>
           <input class="input" type="number" min="0" max="120" id="t-baru" name="toleransi_menit" value="10"></div>
+      <div class="tumpuk" style="gap:8px">
+          <span class="tebal sedang">Absen pulang <span class="muted" style="font-weight:500">(opsional, hanya mode Absen masuk)</span></span>
+          <div class="grid2">
+            <div class="field"><label for="pm-baru">Pulang dibuka</label><input class="input" type="time" id="pm-baru" name="pulang_mulai" value=""></div>
+            <div class="field"><label for="ps-baru">Pulang ditutup</label><input class="input" type="time" id="ps-baru" name="pulang_selesai" value=""></div>
+          </div>
+          <span class="kecil muted">Isi untuk slot yang juga memakai absen pulang (mis. kelas siang). Petugas menampilkan QR pulang di jam ini. Kosongkan keduanya bila tidak ada absen pulang.</span>
+        </div>
         <button class="btn btn-garis btn-kecil" type="submit">${ikon.tambah(18)} Tambah slot</button>
       </form>
     </div>`;

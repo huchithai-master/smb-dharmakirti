@@ -5,8 +5,9 @@ import { blokHonorLaporan, pasangLaporan, menuItem } from './admin-data.js';
 const qs = (o) => new URLSearchParams(Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== '')).toString();
 
 // Sub-menu Kepala SMB: Beranda (izin & penggantian), Atur Tugas, Lainnya (honor & rekap).
-export function subNavKepala(aktif) {
-  const item = [['beranda', '#/kepala', 'Beranda'], ['tugas', '#/kepala/tugas', 'Atur Tugas'], ['lainnya', '#/kepala/lainnya', 'Lainnya']];
+export function subNavKepala(aktif, wakil = false) {
+  const dasar = wakil ? '#/wakil' : '#/kepala';
+  const item = [['beranda', dasar, 'Beranda'], ['tugas', dasar + '/tugas', 'Atur Tugas'], ...(wakil ? [] : [['lainnya', '#/kepala/lainnya', 'Lainnya']])];
   return `<nav class="seg tab-abu" aria-label="Menu Kepala SMB">${item
     .map(([k, href, label]) => `<a href="${href}" class="btn btn-kecil" style="min-height:40px;${k === aktif ? 'background:#fff;color:var(--utama);box-shadow:0 1px 3px rgba(17,24,39,.12)' : 'background:transparent;color:var(--abu)'}" ${k === aktif ? 'aria-current="page"' : ''}>${label}</a>`)
     .join('')}</nav>`;
@@ -14,13 +15,15 @@ export function subNavKepala(aktif) {
 
 // ---- Beranda Kepala SMB: izin yang menunggu keputusan dan kelas yang butuh pembina pengganti ----
 export async function beranda(el, { ctx }) {
-  const d = await api('/api/kepala/ringkasan');
+  const wakil = !ctx.me.is_kepala;
+  const P = wakil ? 'wakil' : 'kepala';
+  const d = await api(`/api/${P}/ringkasan`);
   const tindakan = d.izin_menunggu.length + d.butuh_pengganti.length;
 
   el.innerHTML = `
     <div class="hdr" style="padding-bottom:36px">
       <div class="hdr-atas">
-        <div class="merek"><img class="merek-logo" src="/icons/logo-smb.png" alt="" width="26" height="31"> SMB Dharmakirti <span class="lencana">Kepala SMB</span></div>
+        <div class="merek"><img class="merek-logo" src="/icons/logo-smb.png" alt="" width="26" height="31"> SMB Dharmakirti <span class="lencana">${wakil ? 'Wakil Kurikulum' : 'Kepala SMB'}</span></div>
         <a class="btn-ikon-terang" href="#/akun" aria-label="Akun saya">${ikon.orang()}</a>
       </div>
       <div class="sapaan">
@@ -34,14 +37,14 @@ export async function beranda(el, { ctx }) {
       </div>
     </div>
     <div class="isi">
-      ${subNavKepala('beranda')}
+      ${subNavKepala('beranda', wakil)}
       ${d.butuh_pengganti.length ? `
       <div class="kartu" style="background:var(--oranye-bg);border-color:var(--oranye-garis)">
         <span class="label-kecil" style="color:var(--oranye)">Butuh pengganti</span>
         ${d.butuh_pengganti.map((b) => `
           <div class="baris-antara"><div class="tumpuk"><span class="tebal">Kelas ${esc(b.kelas_nama)} butuh pembina pengganti</span>
             <span class="kecil muted">${esc(fmtTanggal(b.tanggal, 'pendek'))} · Slot ${esc(b.slot_nama)} · ${esc(b.nama)} ${JENIS_IZIN[b.jenis].toLowerCase()}</span></div>
-            <a class="btn btn-kecil btn-garis" style="width:auto;color:var(--oranye);border-color:var(--oranye)" href="#/kepala/tugas?${qs({ tanggal: b.tanggal, slot: b.slot_id, kelas: b.kelas_id, peran: 'guru', ganti: b.pengguna_id })}">Tunjuk</a></div>`).join('')}
+            <a class="btn btn-kecil btn-garis" style="width:auto;color:var(--oranye);border-color:var(--oranye)" href="#/${P}/tugas?${qs({ tanggal: b.tanggal, slot: b.slot_id, kelas: b.kelas_id, peran: 'guru', ganti: b.pengguna_id })}">Tunjuk</a></div>`).join('')}
       </div>` : ''}
       <h2 class="judul-seksi" id="izin">Izin menunggu persetujuan (${d.izin_menunggu.length})</h2>
       ${d.izin_menunggu.map((i) => `
@@ -61,7 +64,7 @@ export async function beranda(el, { ctx }) {
     if (!b) return;
     b.disabled = true;
     try {
-      await api(`/api/kepala/izin/${b.dataset.izin}`, { method: 'POST', body: { keputusan: b.dataset.putus } });
+      await api(`/api/${P}/izin/${b.dataset.izin}`, { method: 'POST', body: { keputusan: b.dataset.putus } });
       toast(b.dataset.putus === 'disetujui' ? 'Izin disetujui.' : 'Izin ditolak.');
       ctx.muatUlang();
     } catch (err) {
@@ -69,7 +72,7 @@ export async function beranda(el, { ctx }) {
       b.disabled = false;
     }
   });
-  const segar = setInterval(() => document.visibilityState === 'visible' && ctx.muatUlang(), 30000);
+  const segar = setInterval(() => document.visibilityState === 'visible' && ctx.muatUlangDiam(), 30000);
   return () => clearInterval(segar);
 }
 

@@ -12,7 +12,7 @@ function infoSesi(s) {
     const t = h * 60 + m + s.toleransi_menit;
     return `${String(Math.floor(t / 60)).padStart(2, '0')}.${String(t % 60).padStart(2, '0')}`;
   })();
-  return `<b>Absen masuk.</b> Scan di petugas pintu masuk mulai ${fmtJam(s.scan_mulai)}, tepat waktu s.d. ${batas}.`;
+  return `<b>Absen masuk.</b> Scan di petugas pintu masuk mulai ${fmtJam(s.scan_mulai)}, tepat waktu s.d. ${batas}.${s.ada_pulang ? ` <b>Absen pulang</b> scan lagi pukul ${fmtJam(s.pulang_mulai)}–${fmtJam(s.pulang_selesai)}.` : ''}`;
 }
 
 // Daftar tim kelas: pembina dulu, lalu asisten, dengan nama sendiri ditandai "Anda".
@@ -35,6 +35,12 @@ function kartuSesi(s, bisaScan, namaSaya) {
   let aksi = '';
   if (s.status === 'hadir' || s.status === 'terlambat') {
     aksi = `<div class="info info-hijau">${ikon.centang(16)}<span>Tercatat ${s.status === 'terlambat' ? 'terlambat' : 'hadir'} pukul <b>${fmtJam(s.jam)}</b>.</span></div>`;
+    if (s.ada_pulang) {
+      if (s.jam_pulang) aksi += `<div class="info info-hijau">${ikon.centang(16)}<span>Pulang tercatat pukul <b>${fmtJam(s.jam_pulang)}</b>.</span></div>`;
+      else if (bisaScan && s.status_pulang === 'buka') aksi += `<a class="btn btn-utama" href="#/scan">${ikon.qr(20)} Scan QR Pulang</a>`;
+      else if (bisaScan && s.status_pulang === 'nanti') aksi += `<button class="btn btn-abu" disabled>Absen pulang dibuka pukul ${fmtJam(s.pulang_mulai)}</button>`;
+      else if (bisaScan) aksi += `<div class="info info-abu">${ikon.info()}<span>Absen pulang sudah ditutup.</span></div>`;
+    }
   } else if (s.status === 'izin') {
     aksi = `<div class="info info-ungu">${ikon.info()}<span>Izin Anda untuk sesi ini sudah disetujui.</span></div>`;
   } else if (s.status === 'alpa') {
@@ -168,7 +174,7 @@ export async function riwayat(el, { query }) {
           <div class="tanggal-kotak"><b>${Number(b.tanggal.slice(8))}</b><span>${bulanSingkat(b.tanggal)}</span></div>
           <div class="tumpuk">
             <span class="tebal">${esc(b.kelas_nama)} · ${peranLabel(b.peran)}${b.jenis === 'pengganti' ? ' Pengganti' : ''}</span>
-            <span class="kecil muted">${esc(b.slot_nama)}${b.jam ? (b.mode === 'konfirmasi' ? ' · dikonfirmasi ' : ' · scan ') + fmtJam(b.jam) : ''}${b.keterangan ? ' · ' + esc(b.keterangan) : ''}</span>
+            <span class="kecil muted">${esc(b.slot_nama)}${b.jam ? (b.mode === 'konfirmasi' ? ' · dikonfirmasi ' : ' · scan ') + fmtJam(b.jam) : ''}${b.jam_pulang ? ' · pulang ' + fmtJam(b.jam_pulang) : ''}${b.keterangan ? ' · ' + esc(b.keterangan) : ''}</span>
           </div>
           ${chip(b.status)}
         </div>`,

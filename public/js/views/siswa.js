@@ -119,9 +119,9 @@ export async function daftarMurid(el, { ctx }) {
 
   el.innerHTML = `
     <div class="hdr-putih">
-      <div class="baris"><a class="btn-kembali" href="${ctx.me.is_admin ? '#/admin/lainnya' : '#/kepala/lainnya'}" aria-label="Kembali">${ikon.kembali()}</a><h1>Data Murid</h1></div>
+      <div class="baris"><a class="btn-kembali" href="${ctx.me.is_admin ? '#/admin/lainnya' : '#/kepala/lainnya'}" aria-label="Kembali">${ikon.kembali()}</a><h1>Data Murid</h1><a class="btn btn-netral btn-kecil" style="width:auto;margin-left:auto" href="#/admin/murid/impor">${ikon.unduh()} Impor Excel</a></div>
       <div style="padding:0 4px"><label class="sr-only" for="cari">Cari</label>
-        <input class="input" id="cari" type="search" placeholder="Cari nama atau NIK" style="background:#f7f8f9"></div>
+        <input class="input" id="cari" type="search" placeholder="Cari nama murid" style="background:#f7f8f9"></div>
       <div class="chips" id="filter" style="padding:0 4px">
         <button data-k="0" aria-pressed="true">Semua (${murid.length})</button>
         ${kelas.map((k) => `<button data-k="${k.id}" aria-pressed="false">${esc(k.nama)} (${murid.filter((m) => m.kelas_id === k.id).length})</button>`).join('')}
@@ -133,7 +133,7 @@ export async function daftarMurid(el, { ctx }) {
   const daftar = el.querySelector('#daftar');
   const tampil = () => {
     const q = cari.toLowerCase();
-    const rows = murid.filter((m) => (!filter || m.kelas_id === filter) && (!q || m.nama.toLowerCase().includes(q) || (m.nik ?? '').includes(q)));
+    const rows = murid.filter((m) => (!filter || m.kelas_id === filter) && (!q || m.nama.toLowerCase().includes(q)));
     daftar.innerHTML = rows.length
       ? rows.map((m) => `
         <a class="item-link" href="#/admin/murid/${m.id}" style="${m.aktif ? '' : 'opacity:.6'}">
@@ -164,8 +164,8 @@ function bagianMurid(m, kelas) {
       <section class="kartu">
         <span class="label-kecil">Data siswa</span>
         <div class="field"><label for="nik">NIK <span class="muted" style="font-weight:500">(boleh dikosongkan dulu)</span></label>
-          <input class="input" id="nik" inputmode="numeric" maxlength="16" pattern="[0-9]*" value="${esc(m.nik ?? '')}" placeholder="16 digit angka, isi nanti bila belum tahu">
-          <span class="kecil muted">Hanya angka, 16 digit.</span></div>
+          <input class="input" id="nik" inputmode="numeric" maxlength="16" pattern="[0-9]*" autocomplete="off" value="" placeholder="${m.nik_ada ? 'Sudah tersimpan (disembunyikan)' : '16 digit angka, isi nanti bila belum tahu'}">
+          <span class="kecil muted">${m.nik_ada ? 'NIK tidak ditampilkan demi kerahasiaan. Kosongkan bila tidak diubah, isi hanya untuk menggantinya.' : 'Hanya angka, 16 digit. Setelah disimpan, NIK tidak akan ditampilkan lagi.'}</span></div>
         <div class="field"><label for="nama">Nama lengkap siswa</label><input class="input" id="nama" maxlength="80" value="${esc(m.nama)}" required></div>
         <div class="field"><label for="kelas">Kelas</label>
           <select class="input" id="kelas">${kelas.map((k) => `<option value="${k.id}" ${k.id === m.kelas_id ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select></div>
@@ -190,7 +190,7 @@ export async function formMurid(el, { params, ctx }) {
   const baru = params.id === 'baru';
   const r = baru ? { kelas: (await api('/api/admin/murid')).kelas, murid: null } : await api(`/api/admin/murid/${encodeURIComponent(params.id)}`);
   const m = r.murid ?? {
-    nik: '', nama: '', kelas_id: r.kelas[0]?.id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', alamat: '', aktif: true,
+    nik_ada: false, nama: '', kelas_id: r.kelas[0]?.id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', alamat: '', aktif: true,
   };
 
   el.innerHTML = `
@@ -213,7 +213,7 @@ export async function formMurid(el, { params, ctx }) {
     e.preventDefault();
     $('galat').textContent = '';
     const body = {
-      nik: $('nik').value, nama: $('nama').value, kelas_id: Number($('kelas').value), tempat_lahir: $('tempat').value,
+      nik: $('nik').value.trim(), nama: $('nama').value, kelas_id: Number($('kelas').value), tempat_lahir: $('tempat').value,
       tanggal_lahir: $('lahir').value, hp: $('hp').value, nama_ortu: $('ortu').value, hp_ortu: $('hportu').value,
       asal_sekolah: $('asal').value, alamat: $('alamat').value, aktif: baru ? true : $('aktif').checked,
     };
@@ -244,7 +244,7 @@ export async function muridPembina(el, { ctx }) {
 
   el.innerHTML = `
     <div class="hdr-putih">
-      <div class="baris"><h1>Data Murid</h1></div>
+      <div class="baris"><h1>Data Murid</h1>${kelas.length ? `<a class="btn btn-netral btn-kecil" style="width:auto;margin-left:auto" href="#/murid/impor">${ikon.unduh()} Impor Excel</a>` : ''}</div>
       <div class="kecil muted" style="padding:0 4px">${kelas.length ? `Kelas ${esc(kelas.map((k) => k.nama).join(', '))}` : 'Anda belum ditugaskan sebagai pembina di kelas mana pun.'}</div>
       ${kelas.length ? `<div class="seg tab-abu" id="tab" role="tablist" style="margin:0 4px">
         <button role="tab" data-t="aktif" aria-selected="true">Aktif (${jumlah(true)})</button>
@@ -320,7 +320,7 @@ export async function formMuridPembina(el, { params, ctx }) {
   const r = baru ? await api('/api/pembina/murid') : await api(`/api/pembina/murid/${encodeURIComponent(params.id)}`);
   const kelas = r.kelas;
   if (!kelas.length) return ctx.pergi('/murid');
-  const m = r.murid ?? { nik: '', nama: '', kelas_id: kelas[0].id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', alamat: '', aktif: true };
+  const m = r.murid ?? { nik_ada: false, nama: '', kelas_id: kelas[0].id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', alamat: '', aktif: true };
 
   el.innerHTML = `
     ${hdrKembali(baru ? 'Tambah Murid' : 'Data Murid', '#/murid', baru ? '' : (m.aktif ? 'Aktif' : 'Di arsip'))}
@@ -350,7 +350,7 @@ export async function formMuridPembina(el, { params, ctx }) {
     e.preventDefault();
     $('galat').textContent = '';
     const body = {
-      nik: $('nik').value, nama: $('nama').value, kelas_id: Number($('kelas').value), tempat_lahir: $('tempat').value,
+      nik: $('nik').value.trim(), nama: $('nama').value, kelas_id: Number($('kelas').value), tempat_lahir: $('tempat').value,
       tanggal_lahir: $('lahir').value, hp: $('hp').value, nama_ortu: $('ortu').value, hp_ortu: $('hportu').value,
       asal_sekolah: $('asal').value, alamat: $('alamat').value, aktif: baru ? true : m.aktif,
     };

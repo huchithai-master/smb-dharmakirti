@@ -50,15 +50,21 @@ export async function petugas(el, { ctx, query }) {
     if (s.mode === 'konfirmasi') return `Jendela scan ${fmtJam(s.scan_mulai)}–${fmtJam(s.scan_selesai)}`;
     const [h, m] = s.jam_mulai.split(':').map(Number);
     const t = h * 60 + m + s.toleransi_menit;
-    return `Tepat waktu s.d. ${String(Math.floor(t / 60)).padStart(2, '0')}.${String(t % 60).padStart(2, '0')} · ditutup ${fmtJam(s.scan_selesai)}`;
+    return `Tepat waktu s.d. ${String(Math.floor(t / 60)).padStart(2, '0')}.${String(t % 60).padStart(2, '0')} · ditutup ${fmtJam(s.scan_selesai)}${punyaPulang(s) ? ` · pulang ${fmtJam(s.pulang_mulai)}–${fmtJam(s.pulang_selesai)}` : ''}`;
   }
 
+  const punyaPulang = (s) => s.mode === 'masuk' && !!s.pulang_mulai && !!s.pulang_selesai;
+  // 'nanti' | 'buka' (scan masuk) | 'jeda' (menunggu jam pulang) | 'pulang' (scan pulang) | 'selesai'
   function statusSlotSekarang(s) {
     const d = new Date(Date.now() + offset);
     const m = d.getHours() * 60 + d.getMinutes();
     const mnt = (j) => Number(j.slice(0, 2)) * 60 + Number(j.slice(3));
     if (m < mnt(s.scan_mulai)) return 'nanti';
     if (m <= mnt(s.scan_selesai)) return 'buka';
+    if (punyaPulang(s)) {
+      if (m < mnt(s.pulang_mulai)) return 'jeda';
+      if (m <= mnt(s.pulang_selesai)) return 'pulang';
+    }
     return 'selesai';
   }
 
@@ -73,9 +79,10 @@ export async function petugas(el, { ctx, query }) {
   async function buatQr(jendela) {
     const kelas = st.slot.mode === 'konfirmasi' ? st.kelasId ?? 0 : 0;
     const payload = `${st.slot.id}.${sesi.tanggal}.${kelas}.${sesi.petugas_id}.${jendela}`;
-    const sig = b64url(await crypto.subtle.sign('HMAC', kunci, new TextEncoder().encode(payload))).slice(0, 22);
+    const pulang = statusSlotSekarang(st.slot) === 'pulang';
+    const sig = b64url(await crypto.subtle.sign('HMAC', kunci, new TextEncoder().encode(pulang ? `pulang|${payload}` : payload))).slice(0, 22);
     const qr = window.qrcode(0, 'M');
-    qr.addData(`SMBH1.${payload}.${sig}`);
+    qr.addData(`${pulang ? 'SMBH2' : 'SMBH1'}.${payload}.${sig}`);
     qr.make();
     return qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true, alt: 'Kode QR absensi' });
   }
@@ -83,7 +90,15 @@ export async function petugas(el, { ctx, query }) {
   function kartuQrHtml() {
     const s = st.slot;
     const status = statusSlotSekarang(s);
-    if (status !== 'buka') {
+    if (status === 'jeda') {
+      return `<div class="qr-info">
+        <span class="qr-info-ikon">${ikon.jam(28)}</span>
+        <span class="qr-info-judul">QR absen pulang muncul pukul</span>
+        <span class="qr-info-jam">${fmtJam(s.pulang_mulai)}</span>
+        <span class="qr-info-teks">Scan masuk sudah ditutup. Biarkan halaman ini terbuka, QR pulang tampil sendiri.</span>
+      </div>`;
+    }
+    if (status !== 'buka' && status !== 'pulang') {
       return status === 'nanti'
         ? `<div class="qr-info">
             <span class="qr-info-ikon">${ikon.jam(28)}</span>
@@ -94,7 +109,7 @@ export async function petugas(el, { ctx, query }) {
         : `<div class="qr-info">
             <span class="qr-info-ikon qr-info-abu">${ikon.centang(28)}</span>
             <span class="qr-info-judul">Waktu scan sudah ditutup</span>
-            <span class="qr-info-jam qr-info-abu">${fmtJam(s.scan_selesai)}</span>
+            <span class="qr-info-jam qr-info-abu">${fmtJam(punyaPulang(s) ? s.pulang_selesai : s.scan_selesai)}</span>
             <span class="qr-info-teks">Slot ${esc(s.nama)} tidak menerima scan lagi.</span>
           </div>`;
     }
@@ -114,7 +129,8 @@ export async function petugas(el, { ctx, query }) {
         </div>`
       : '';
     return `
-      <span class="tebal">${s.mode === 'konfirmasi' ? 'Tunjukkan ke pengajar di kelas ini' : 'Tunjukkan ke pengajar yang datang'}</span>
+      ${status === 'pulang' ? '<span class="chip chip-terlambat" style="align-self:center">ABSEN PULANG</span>' : ''}
+      <span class="tebal">${s.mode === 'konfirmasi' ? 'Tunjukkan ke pengajar di kelas ini' : status === 'pulang' ? 'Tunjukkan ke pengajar yang pulang' : 'Tunjukkan ke pengajar yang datang'}</span>
       <div class="qr-wadah" id="qr"></div>
       <div style="align-self:stretch" class="tumpuk">
         <div class="baris-antara sedang"><span class="muted">QR berganti dalam</span><b style="color:var(--utama)" id="hitung">–</b></div>
@@ -146,6 +162,18 @@ export async function petugas(el, { ctx, query }) {
           </button>`;
         }).join('')}`;
     }
+    if (punyaPulang(st.slot) && ['pulang', 'selesai'].includes(statusSlotSekarang(st.slot))) {
+      const hadir = p.kelas.flatMap((k) => k.anggota.map((a) => ({ ...a, kelas: k.nama }))).filter((a) => a.status === 'hadir' || a.status === 'terlambat');
+      const pulang = hadir.filter((a) => a.jam_pulang).sort((x, y) => String(y.jam_pulang).localeCompare(String(x.jam_pulang)));
+      return `
+      <div class="kartu">
+        <div class="baris-antara"><span class="tebal">Sudah pulang</span><span style="font-size:20px;font-weight:800">${pulang.length}<span class="sedang muted"> / ${hadir.length} yang hadir</span></span></div>
+        <div class="batang"><div style="width:${hadir.length ? Math.round((pulang.length / hadir.length) * 100) : 0}%"></div></div>
+        ${pulang.map((a) => `<div class="baris-antara sedang"><span><b>${esc(a.nama)}</b> <span class="muted">· ${peranLabel(a.peran)} · ${esc(a.kelas)}</span></span>
+          <span class="tebal" style="color:var(--utama)">${fmtJam(a.jam_pulang)}</span></div>`).join('') || '<div class="kosong" style="padding:12px">Belum ada yang absen pulang.</div>'}
+        ${hadir.length > pulang.length ? `<span class="kecil muted">Belum pulang: ${esc(hadir.filter((a) => !a.jam_pulang).map((a) => a.nama).join(', '))}</span>` : ''}
+      </div>`;
+    }
     const semua = p.kelas.flatMap((k) => k.anggota.map((a) => ({ ...a, kelas: k.nama })))
       .filter((a) => a.status === 'hadir' || a.status === 'terlambat')
       .sort((x, y) => String(y.jam).localeCompare(String(x.jam)));
@@ -173,9 +201,12 @@ export async function petugas(el, { ctx, query }) {
   }
 
   let statusTerakhir = null;
+  let kartuTerakhir = null;
+  let progresTerakhir = null;
   function gambarKartu() {
     statusTerakhir = statusSlotSekarang(st.slot);
-    kartuQr.innerHTML = kartuQrHtml();
+    kartuTerakhir = kartuQrHtml();
+    kartuQr.innerHTML = kartuTerakhir;
     st.jendela = null;
     gambarQr(true);
   }
@@ -193,7 +224,7 @@ export async function petugas(el, { ctx, query }) {
     w.className = 'modal-latar';
     w.innerHTML = `<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="popup-judul">
       <div class="modal-centang">✓</div>
-      <span class="kecil tebal muted" id="popup-judul">BERHASIL SCAN</span>
+      <span class="kecil tebal muted" id="popup-judul">${a.pulang ? 'BERHASIL ABSEN PULANG' : 'BERHASIL SCAN'}</span>
       <span class="modal-nama">${esc(a.nama)}</span>
       <span class="sedang"><b>${peranLabel(a.peran)}</b> · Kelas ${esc(a.kelas)}</span>
       <span class="kecil muted">${a.jam ? fmtJam(a.jam) : ''}${a.status === 'terlambat' ? ' (terlambat)' : ''}</span>
@@ -219,6 +250,11 @@ export async function petugas(el, { ctx, query }) {
         const kk = kunciA(k, a);
         sekarang.add(kk);
         if (st.dikenal && !st.dikenal.has(kk)) baru.push({ ...a, kelas: k.nama });
+        if (a.jam_pulang) {
+          const kp = kk + '|pulang';
+          sekarang.add(kp);
+          if (st.dikenal && !st.dikenal.has(kp)) baru.push({ ...a, kelas: k.nama, pulang: true, jam: a.jam_pulang });
+        }
       }
     }
     st.dikenal = sekarang;
@@ -241,8 +277,13 @@ export async function petugas(el, { ctx, query }) {
       st.offline = true;
     }
     deteksiBaru();
-    progresEl.innerHTML = progresHtml();
-    if (!el.querySelector('#popup-scan') || !el.querySelector('#qr')) gambarKartu();
+    // Tulis ulang hanya bila isinya berubah, supaya layar (dan QR) tidak berkedip tiap 3 detik.
+    const htmlProgres = progresHtml();
+    if (htmlProgres !== progresTerakhir) {
+      progresTerakhir = htmlProgres;
+      progresEl.innerHTML = htmlProgres;
+    }
+    if (!el.querySelector('#popup-scan') && kartuQrHtml() !== kartuTerakhir) gambarKartu();
   }
 
   function gantiSlot(slot) {
@@ -253,7 +294,8 @@ export async function petugas(el, { ctx, query }) {
     st.antrean = [];
     el.querySelector('#popup-scan')?.remove();
     header();
-    progresEl.innerHTML = progresHtml();
+    progresTerakhir = progresHtml();
+    progresEl.innerHTML = progresTerakhir;
     gambarKartu();
     muatProgres();
   }
@@ -262,7 +304,8 @@ export async function petugas(el, { ctx, query }) {
     const k = e.target.closest('[data-kelas]');
     if (k) {
       st.kelasId = Number(k.dataset.kelas);
-      progresEl.innerHTML = progresHtml();
+      progresTerakhir = progresHtml();
+      progresEl.innerHTML = progresTerakhir;
       gambarKartu();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;

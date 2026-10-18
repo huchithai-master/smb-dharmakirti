@@ -40,7 +40,9 @@ CREATE TABLE IF NOT EXISTS slot (
   mode TEXT NOT NULL CHECK (mode IN ('konfirmasi', 'masuk')),
   scan_mulai TEXT NOT NULL,
   scan_selesai TEXT NOT NULL,
-  toleransi_menit INTEGER NOT NULL DEFAULT 10
+  toleransi_menit INTEGER NOT NULL DEFAULT 10,
+  pulang_mulai TEXT,
+  pulang_selesai TEXT
 );
 
 -- Jadwal tetap. UNIQUE(pengguna_id, slot_id) mencegah satu orang mengajar dua kelas di slot yang sama.
@@ -104,6 +106,8 @@ CREATE TABLE IF NOT EXISTS absensi (
   waktu_scan TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('hadir', 'terlambat')),
   petugas_id INTEGER REFERENCES pengguna(id) ON DELETE SET NULL,
+  jam_pulang TEXT,
+  petugas_pulang_id INTEGER REFERENCES pengguna(id) ON DELETE SET NULL,
   UNIQUE (tanggal, slot_id, pengguna_id)
 );
 

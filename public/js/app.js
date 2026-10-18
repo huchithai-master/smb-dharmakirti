@@ -10,6 +10,7 @@ import * as honor from './views/honor.js';
 import * as laporan from './views/laporan.js';
 import * as siswa from './views/siswa.js';
 import * as kepala from './views/kepala.js';
+import * as impor from './views/impor.js';
 
 export const ctx = {
   me: null,
@@ -17,6 +18,8 @@ export const ctx = {
   dimuat: 0,
   installPrompt: null,
   muatUlang: () => render(),
+  // Penyegaran otomatis berkala: tanpa layar "Memuat…" dan tanpa lompat ke atas, agar tampilan tidak berkedip.
+  muatUlangDiam: () => render({ diam: true }),
   pergi: (path) => {
     if (location.hash === '#' + path) render();
     else location.hash = path;
@@ -31,6 +34,7 @@ const RUTE = [
   { path: '/scan', view: scan.scan, perlu: 'is_pengajar', polos: true },
   { path: '/siswa', view: siswa.absenSiswa, perlu: 'is_pengajar', nav: 'beranda' },
   { path: '/murid', view: siswa.muridPembina, perlu: 'bisa_murid', nav: 'murid' },
+  { path: '/murid/impor', view: impor.imporMurid, perlu: 'bisa_murid', nav: 'murid' },
   { path: '/murid/:id', view: siswa.formMuridPembina, perlu: 'bisa_murid', nav: 'murid' },
   { path: '/riwayat', view: pengajar.riwayat, perlu: 'is_pengajar', nav: 'riwayat' },
   { path: '/izin', view: pengajar.izin, perlu: 'is_pengajar', nav: 'izin' },
@@ -40,10 +44,13 @@ const RUTE = [
   { path: '/kepala', view: kepala.beranda, perlu: 'is_kepala', nav: 'kepala' },
   { path: '/kepala/tugas', view: admin.tugas, perlu: 'is_kepala', nav: 'kepala' },
   { path: '/kepala/lainnya', view: kepala.lainnya, perlu: 'is_kepala', nav: 'kepala' },
+  { path: '/wakil', view: kepala.beranda, perlu: 'is_wakil', nav: 'wakil' },
+  { path: '/wakil/tugas', view: admin.tugas, perlu: 'is_wakil', nav: 'wakil' },
   { path: '/admin/lainnya', view: data.lainnya, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/pengguna', view: data.daftarPengguna, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/pengguna/:id', view: data.formPengguna, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/murid', view: siswa.daftarMurid, perlu: 'bisa_laporan', nav: 'admin' },
+  { path: '/admin/murid/impor', view: impor.imporMurid, perlu: 'bisa_laporan', nav: 'admin' },
   { path: '/admin/murid/:id', view: siswa.formMurid, perlu: 'bisa_laporan', nav: 'admin' },
   { path: '/admin/libur', view: siswa.libur, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/kelas', view: data.kelas, perlu: 'is_admin', nav: 'admin' },
@@ -100,6 +107,7 @@ function navBawah(aktif) {
   }
   if (m.is_petugas) item.push(['petugas', '#/petugas', ikon.qr(), 'Petugas QR']);
   if (m.is_kepala) item.push(['kepala', '#/kepala', ikon.dokumen(), 'Kepala SMB']);
+  if (m.is_wakil) item.push(['wakil', '#/wakil', ikon.dokumen(), 'Wakil']);
   if (m.is_admin) item.push(['admin', '#/admin', ikon.grafik(), 'Admin']);
   item.push(['akun', '#/akun', ikon.orang(), 'Akun']);
   return `<nav class="nav-bawah" aria-label="Menu utama">${item
@@ -122,7 +130,8 @@ function barDemo() {
 let bersihkan = null;
 let nomorRender = 0;
 
-async function render() {
+async function render(opsi) {
+  const diam = opsi?.diam === true;
   const nomor = ++nomorRender;
   // Status "sedang bertugas" (tab Data Murid) bisa berubah: segarkan data akun bila sudah lebih dari semenit.
   if (ctx.me && Date.now() - ctx.dimuat > 60_000) { try { await muatMe(); } catch { /* abaikan */ } }
@@ -133,13 +142,35 @@ async function render() {
   if (rute.path === '/login' && ctx.me) return ctx.pergi(rumah());
   if (rute.perlu && rute.perlu !== 'login' && !ctx.me[rute.perlu]) return ctx.pergi(rumah());
 
+  const cocok = rute.pola.exec(path);
+  const params = Object.fromEntries(rute.nama.map((n, i) => [n, decodeURIComponent(cocok[i + 1])]));
+  const app = document.getElementById('app');
+
+  // Penyegaran diam-diam: layar baru disusun di luar tampilan, lalu menggantikan yang lama sekaligus.
+  const viewLama = diam ? app.querySelector('#view') : null;
+  if (viewLama) {
+    const baru = document.createElement('main');
+    baru.id = 'view';
+    baru.className = viewLama.className;
+    const y = window.scrollY;
+    try {
+      const hasil = await rute.view(baru, { query, params, ctx });
+      if (nomor !== nomorRender || !viewLama.isConnected) {
+        if (typeof hasil === 'function') hasil();
+        return;
+      }
+      if (bersihkan) { try { bersihkan(); } catch { /* abaikan */ } }
+      bersihkan = hasil || null;
+      viewLama.replaceWith(baru);
+      window.scrollTo(0, y);
+    } catch { /* gagal menyegarkan: biarkan tampilan lama apa adanya */ }
+    return;
+  }
+
   if (bersihkan) {
     try { bersihkan(); } catch { /* abaikan */ }
     bersihkan = null;
   }
-  const cocok = rute.pola.exec(path);
-  const params = Object.fromEntries(rute.nama.map((n, i) => [n, decodeURIComponent(cocok[i + 1])]));
-  const app = document.getElementById('app');
   app.classList.toggle('lebar', !!rute.lebar);
   app.innerHTML = `${rute.polos ? '' : barDemo()}<main id="view" class="${rute.polos ? 'polos' : ''}"><div class="memuat">Memuat…</div></main>${
     rute.nav && ctx.me ? navBawah(navAktif(rute.nav)) : ''
