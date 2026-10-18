@@ -89,8 +89,11 @@ export async function dashboard(el, { query, ctx }) {
     if (s) return ke({ slot: s.dataset.slot });
   });
 
-  const segar = setInterval(() => document.visibilityState === 'visible' && !el.querySelector(':focus') && ctx.muatUlangDiam(), 30000);
-  return () => clearInterval(segar);
+  // Pengajuan baru muncul sendiri: cek tiap 5 detik, dan segera saat aplikasi dibuka kembali.
+  const segarkan = () => document.visibilityState === 'visible' && !el.querySelector(':focus') && ctx.muatUlangDiam();
+  const segar = setInterval(segarkan, 5000);
+  document.addEventListener('visibilitychange', segarkan);
+  return () => { clearInterval(segar); document.removeEventListener('visibilitychange', segarkan); };
 }
 
 let P = 'kepala'; // 'kepala' atau 'wakil' (Wakil Kurikulum: hanya kelas jenjangnya)

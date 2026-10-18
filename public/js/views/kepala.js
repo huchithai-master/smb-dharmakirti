@@ -72,8 +72,11 @@ export async function beranda(el, { ctx }) {
       b.disabled = false;
     }
   });
-  const segar = setInterval(() => document.visibilityState === 'visible' && ctx.muatUlangDiam(), 30000);
-  return () => clearInterval(segar);
+  // Pengajuan baru muncul sendiri: cek tiap 5 detik, dan segera saat aplikasi dibuka kembali.
+  const segarkan = () => document.visibilityState === 'visible' && ctx.muatUlangDiam();
+  const segar = setInterval(segarkan, 5000);
+  document.addEventListener('visibilitychange', segarkan);
+  return () => { clearInterval(segar); document.removeEventListener('visibilitychange', segarkan); };
 }
 
 // ---- Lainnya: honor & pengajuan, rekap absensi bulanan ----
