@@ -139,7 +139,7 @@ export async function daftarMurid(el, { ctx }) {
         <a class="item-link" href="#/admin/murid/${m.id}" style="${m.aktif ? '' : 'opacity:.6'}">
           <span class="avatar kecil">${esc(inisial(m.nama))}</span>
           <span class="tumpuk"><span class="tebal">${esc(m.nama)}</span>
-            <span class="kecil muted">${esc(m.asal_sekolah)} · Ortu: ${esc(m.nama_ortu)}</span></span>
+            <span class="kecil muted">${m.jenis_kelamin ? (m.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan') + ' · ' : ''}${esc(m.asal_sekolah)} · Ortu: ${esc(m.nama_ortu)}</span></span>
           <span class="chip ${m.aktif ? 'chip-hadir' : 'chip-abu'}">${m.aktif ? esc(m.kelas_nama) : 'Nonaktif'}</span>
         </a>`).join('')
       : '<div class="kosong">Belum ada data murid.</div>';
@@ -169,6 +169,12 @@ function bagianMurid(m, kelas) {
         <div class="field"><label for="nama">Nama lengkap siswa</label><input class="input" id="nama" maxlength="80" value="${esc(m.nama)}" required></div>
         <div class="field"><label for="kelas">Kelas</label>
           <select class="input" id="kelas">${kelas.map((k) => `<option value="${k.id}" ${k.id === m.kelas_id ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select></div>
+        <div class="field"><label for="jk">Jenis kelamin</label>
+          <select class="input" id="jk" required>
+            <option value="" ${m.jenis_kelamin ? '' : 'selected'} disabled>Pilih…</option>
+            <option value="L" ${m.jenis_kelamin === 'L' ? 'selected' : ''}>Laki-laki</option>
+            <option value="P" ${m.jenis_kelamin === 'P' ? 'selected' : ''}>Perempuan</option>
+          </select></div>
         <div class="grid2 kolom-hp">
           <div class="field"><label for="tempat">Tempat lahir</label><input class="input" id="tempat" maxlength="60" value="${esc(m.tempat_lahir)}" required></div>
           <div class="field"><label for="lahir">Tanggal lahir</label><input class="input" type="date" id="lahir" value="${esc(m.tanggal_lahir)}" required></div>
@@ -190,7 +196,7 @@ export async function formMurid(el, { params, ctx }) {
   const baru = params.id === 'baru';
   const r = baru ? { kelas: (await api('/api/admin/murid')).kelas, murid: null } : await api(`/api/admin/murid/${encodeURIComponent(params.id)}`);
   const m = r.murid ?? {
-    nik_ada: false, nama: '', kelas_id: r.kelas[0]?.id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', alamat: '', aktif: true,
+    nik_ada: false, nama: '', kelas_id: r.kelas[0]?.id, jenis_kelamin: '', tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', alamat: '', aktif: true,
   };
 
   el.innerHTML = `
@@ -213,7 +219,7 @@ export async function formMurid(el, { params, ctx }) {
     e.preventDefault();
     $('galat').textContent = '';
     const body = {
-      nik: $('nik').value.trim(), nama: $('nama').value, kelas_id: Number($('kelas').value), tempat_lahir: $('tempat').value,
+      nik: $('nik').value.trim(), nama: $('nama').value, kelas_id: Number($('kelas').value), jenis_kelamin: $('jk').value, tempat_lahir: $('tempat').value,
       tanggal_lahir: $('lahir').value, hp: $('hp').value, nama_ortu: $('ortu').value, hp_ortu: $('hportu').value,
       asal_sekolah: $('asal').value, alamat: $('alamat').value, aktif: baru ? true : $('aktif').checked,
     };
@@ -272,7 +278,7 @@ export async function muridPembina(el, { ctx }) {
           <a href="#/murid/${m.id}" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-decoration:none;color:inherit">
             <span class="avatar kecil">${esc(inisial(m.nama))}</span>
             <span class="tumpuk" style="min-width:0"><span class="tebal">${esc(m.nama)}</span>
-              <span class="kecil muted">${esc(m.asal_sekolah)} · Ortu: ${esc(m.nama_ortu)}</span></span>
+              <span class="kecil muted">${m.jenis_kelamin ? (m.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan') + ' · ' : ''}${esc(m.asal_sekolah)} · Ortu: ${esc(m.nama_ortu)}</span></span>
           </a>
           ${aktif ? `<span class="chip chip-hadir">${esc(m.kelas_nama)}</span>`
             : `<button class="btn btn-netral btn-kecil" style="width:auto" data-aktifkan="${m.id}">Aktifkan</button>`}
@@ -320,7 +326,7 @@ export async function formMuridPembina(el, { params, ctx }) {
   const r = baru ? await api('/api/pembina/murid') : await api(`/api/pembina/murid/${encodeURIComponent(params.id)}`);
   const kelas = r.kelas;
   if (!kelas.length) return ctx.pergi('/murid');
-  const m = r.murid ?? { nik_ada: false, nama: '', kelas_id: kelas[0].id, tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', alamat: '', aktif: true };
+  const m = r.murid ?? { nik_ada: false, nama: '', kelas_id: kelas[0].id, jenis_kelamin: '', tempat_lahir: '', tanggal_lahir: '', hp: '', nama_ortu: '', hp_ortu: '', asal_sekolah: '', alamat: '', aktif: true };
 
   el.innerHTML = `
     ${hdrKembali(baru ? 'Tambah Murid' : 'Data Murid', '#/murid', baru ? '' : (m.aktif ? 'Aktif' : 'Di arsip'))}
@@ -350,7 +356,7 @@ export async function formMuridPembina(el, { params, ctx }) {
     e.preventDefault();
     $('galat').textContent = '';
     const body = {
-      nik: $('nik').value.trim(), nama: $('nama').value, kelas_id: Number($('kelas').value), tempat_lahir: $('tempat').value,
+      nik: $('nik').value.trim(), nama: $('nama').value, kelas_id: Number($('kelas').value), jenis_kelamin: $('jk').value, tempat_lahir: $('tempat').value,
       tanggal_lahir: $('lahir').value, hp: $('hp').value, nama_ortu: $('ortu').value, hp_ortu: $('hportu').value,
       asal_sekolah: $('asal').value, alamat: $('alamat').value, aktif: baru ? true : m.aktif,
     };

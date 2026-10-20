@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS murid (
   nik TEXT UNIQUE,
   nama TEXT NOT NULL,
   kelas_id INTEGER NOT NULL REFERENCES kelas(id),
+  jenis_kelamin TEXT CHECK (jenis_kelamin IN ('L', 'P')),
   tempat_lahir TEXT NOT NULL,
   tanggal_lahir TEXT NOT NULL,
   hp TEXT,

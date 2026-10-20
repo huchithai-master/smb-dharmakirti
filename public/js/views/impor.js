@@ -6,6 +6,7 @@ import { esc, ikon, muatSkrip, toast } from '../ui.js';
 const KOLOM = [
   { k: 'nama', judul: 'Nama lengkap', wajib: true, lebar: 28, cocok: ['namalengkap', 'nama', 'namasiswa', 'namamurid'] },
   { k: 'kelas', judul: 'Kelas', wajib: true, lebar: 12, cocok: ['kelas'] },
+  { k: 'jenis_kelamin', judul: 'Jenis kelamin (L/P)', wajib: true, lebar: 14, cocok: ['jeniskelamin', 'jeniskelaminlp', 'jk', 'gender', 'lp'] },
   { k: 'tempat_lahir', judul: 'Tempat lahir', wajib: true, lebar: 18, cocok: ['tempatlahir', 'tempat'] },
   { k: 'tanggal_lahir', judul: 'Tanggal lahir', wajib: true, lebar: 16, cocok: ['tanggallahir', 'tgllahir', 'lahir'] },
   { k: 'alamat', judul: 'Alamat', wajib: true, lebar: 36, cocok: ['alamat', 'alamatsiswa'] },
@@ -39,15 +40,16 @@ async function buatTemplate(kelasNama) {
   z.file('xl/styles.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="4"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><i/><sz val="11"/><color rgb="FF7A8194"/><name val="Arial"/></font><font><b/><sz val="12"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1B2B63"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="49" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1"><alignment vertical="center"/></xf><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="49" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyNumberFormat="1"/><xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs></styleSheet>`);
 
-  const contoh = { nama: `${TANDA_CONTOH} Budi Santoso`, kelas: kelasNama[0] ?? '1 SD', tempat_lahir: 'Palembang', tanggal_lahir: '2018-05-20', alamat: 'Jl. Contoh No. 1, Palembang', asal_sekolah: 'SD Contoh', nama_ortu: 'Hendra Santoso', hp_ortu: '081234567890', hp: '', nik: '' };
+  const contoh = { nama: `${TANDA_CONTOH} Budi Santoso`, kelas: kelasNama[0] ?? '1 SD', jenis_kelamin: 'L', tempat_lahir: 'Palembang', tanggal_lahir: '2018-05-20', alamat: 'Jl. Contoh No. 1, Palembang', asal_sekolah: 'SD Contoh', nama_ortu: 'Hendra Santoso', hp_ortu: '081234567890', hp: '', nik: '' };
   const sel = (ref, v, s) => `<c r="${ref}" t="inlineStr" s="${s}"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
   const kolomXml = KOLOM.map((c, i) => `<col min="${i + 1}" max="${i + 1}" width="${c.lebar}" customWidth="1" style="2"/>`).join('');
   const judul = KOLOM.map((c, i) => sel(`${hurufKolom(i)}1`, c.judul + (c.wajib ? ' *' : ''), 1)).join('');
   const baris2 = KOLOM.map((c, i) => sel(`${hurufKolom(i)}2`, contoh[c.k], 3)).join('');
+  const kolJk = hurufKolom(KOLOM.findIndex((c) => c.k === 'jenis_kelamin'));
   const kolKelas = hurufKolom(KOLOM.findIndex((c) => c.k === 'kelas'));
   const akhirKelas = Math.max(2, kelasNama.length + 1);
   z.file('xl/worksheets/sheet1.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${kolomXml}</cols><sheetData><row r="1" ht="22" customHeight="1">${judul}</row><row r="2">${baris2}</row></sheetData><dataValidations count="1"><dataValidation type="list" allowBlank="1" showErrorMessage="1" errorTitle="Kelas" error="Pilih kelas dari daftar." sqref="${kolKelas}2:${kolKelas}${BATAS_BARIS + 1}"><formula1>Petunjuk!$A$12:$A$${11 + akhirKelas - 1}</formula1></dataValidation></dataValidations></worksheet>`);
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="18"/><cols>${kolomXml}</cols><sheetData><row r="1" ht="22" customHeight="1">${judul}</row><row r="2">${baris2}</row></sheetData><dataValidations count="2"><dataValidation type="list" allowBlank="1" showErrorMessage="1" errorTitle="Jenis kelamin" error="Isi L atau P." sqref="${kolJk}2:${kolJk}${BATAS_BARIS + 1}"><formula1>"L,P"</formula1></dataValidation><dataValidation type="list" allowBlank="1" showErrorMessage="1" errorTitle="Kelas" error="Pilih kelas dari daftar." sqref="${kolKelas}2:${kolKelas}${BATAS_BARIS + 1}"><formula1>Petunjuk!$A$12:$A$${11 + akhirKelas - 1}</formula1></dataValidation></dataValidations></worksheet>`);
 
   const petunjuk = [
     ['Cara mengisi template impor murid', 4],
@@ -55,7 +57,7 @@ async function buatTemplate(kelasNama) {
     ['2. Baris contoh berawalan (CONTOH) diabaikan saat impor. Boleh dihapus atau ditimpa.', 0],
     ['3. Kolom bertanda * wajib diisi. No. HP siswa dan NIK boleh dikosongkan.', 0],
     ['4. Kelas dipilih dari daftar di bawah (kolom Kelas punya pilihan daftar).', 0],
-    ['5. Tanggal lahir ditulis 2018-05-20 atau 20/05/2018.', 0],
+    ['5. Jenis kelamin diisi L (laki-laki) atau P (perempuan). Tanggal lahir ditulis 2018-05-20 atau 20/05/2018.', 0],
     ['6. No. HP ditulis 08..., NIK 16 digit angka. Kolom sudah berformat Teks agar angka 0 di depan tidak hilang. Jangan ubah formatnya.', 0],
     ['7. Simpan sebagai .xlsx, lalu unggah lewat menu Impor Excel di aplikasi. Maksimal ' + BATAS_BARIS + ' murid per impor.', 0],
     ['8. NIK yang sudah tersimpan tidak ditampilkan lagi di aplikasi demi kerahasiaan.', 0],
@@ -168,7 +170,7 @@ function ubahKeMurid(baris) {
       nik = '';
     } else if (nik) nik = nik.replace(/\D/g, '');
     hasil.push({
-      baris: b.no, nama: nilai('nama'), kelas: nilai('kelas'), tempat_lahir: nilai('tempat_lahir'), tanggal_lahir: normTanggal(sel('tanggal_lahir')),
+      baris: b.no, nama: nilai('nama'), kelas: nilai('kelas'), jenis_kelamin: nilai('jenis_kelamin'), tempat_lahir: nilai('tempat_lahir'), tanggal_lahir: normTanggal(sel('tanggal_lahir')),
       alamat: nilai('alamat'), asal_sekolah: nilai('asal_sekolah'), nama_ortu: nilai('nama_ortu'), hp_ortu: nilai('hp_ortu'),
       hp: peta.hp !== undefined ? nilai('hp') : '', nik, galat_awal: galatNik,
     });
