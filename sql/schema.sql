@@ -164,6 +164,16 @@ CREATE TABLE IF NOT EXISTS materi (
   UNIQUE (tanggal, slot_id, kelas_id)
 );
 
+-- Kunci sementara: hanya satu orang per kelas yang mengisi absensi siswa & materi pada satu waktu.
+CREATE TABLE IF NOT EXISTS kunci_absen_murid (
+  tanggal TEXT NOT NULL,
+  slot_id INTEGER NOT NULL REFERENCES slot(id) ON DELETE CASCADE,
+  kelas_id INTEGER NOT NULL REFERENCES kelas(id) ON DELETE CASCADE,
+  pengguna_id INTEGER NOT NULL REFERENCES pengguna(id) ON DELETE CASCADE,
+  diperbarui BIGINT NOT NULL,
+  PRIMARY KEY (tanggal, slot_id, kelas_id)
+);
+
 CREATE TABLE IF NOT EXISTS sesi_login (
   token_hash TEXT PRIMARY KEY,
   pengguna_id INTEGER NOT NULL REFERENCES pengguna(id) ON DELETE CASCADE,
@@ -199,6 +209,7 @@ ALTER TABLE libur ENABLE ROW LEVEL SECURITY;
 ALTER TABLE murid ENABLE ROW LEVEL SECURITY;
 ALTER TABLE absensi_murid ENABLE ROW LEVEL SECURITY;
 ALTER TABLE materi ENABLE ROW LEVEL SECURITY;
+ALTER TABLE kunci_absen_murid ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sesi_login ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pengaturan ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pengajuan_honor ENABLE ROW LEVEL SECURITY;

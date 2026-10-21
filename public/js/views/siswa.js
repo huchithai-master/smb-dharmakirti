@@ -9,7 +9,17 @@ const STATUS = [['hadir', 'Hadir'], ['izin', 'Izin'], ['sakit', 'Sakit'], ['alpa
 
 // ---- Pembina: absensi siswa kelasnya, lalu materi yang diajarkan ----
 export async function absenSiswa(el, { query, ctx }) {
-  const d = await api(`/api/siswa?slot_id=${encodeURIComponent(query.slot ?? '')}`);
+  let d;
+  try {
+    d = await api(`/api/siswa?slot_id=${encodeURIComponent(query.slot ?? '')}`);
+  } catch (e) {
+    if (e.status !== 409) throw e;
+    // Rekan setim sedang mengisi absensi kelas ini: jangan diganggu, tunggu sampai selesai.
+    el.innerHTML = `${hdrKembali('Absensi Siswa', '#/')}
+      <div class="isi"><div class="info info-oranye">${ikon.info()}<span><b>Absensi sedang dilakukan.</b> ${esc(e.message.replace(/^Absensi sedang dilakukan oleh /, 'Sedang diisi oleh ').replace(/\. Tunggu sampai selesai\.$/, '.'))} Coba lagi nanti.</span></div>
+      <a class="btn btn-utama" href="#/">Kembali ke Beranda</a></div>`;
+    return;
+  }
   const status = new Map(d.murid.map((m) => [m.id, m.status ?? 'hadir']));
   let tersimpan = d.absensi_tersimpan || d.murid.length === 0;
 
@@ -109,6 +119,20 @@ export async function absenSiswa(el, { query, ctx }) {
     }
   });
   gambar();
+
+  // Selama halaman terbuka, kunci kelas ini dipegang; perbarui tiap 45 detik dan lepas saat pergi.
+  const denyut = setInterval(() => {
+    api('/api/siswa/ping', { method: 'POST', body: { slot_id: d.slot_id } }).catch(() => {});
+  }, 45000);
+  return () => {
+    clearInterval(denyut);
+    try {
+      fetch('/api/siswa/selesai', {
+        method: 'POST', credentials: 'same-origin', keepalive: true,
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slot_id: d.slot_id }),
+      }).catch(() => {});
+    } catch { /* abaikan */ }
+  };
 }
 
 // ---- Admin: data murid ----

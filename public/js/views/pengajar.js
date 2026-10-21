@@ -51,12 +51,13 @@ function kartuSesi(s, bisaScan, namaSaya) {
     aksi = `<button class="btn btn-abu" disabled>Scan dibuka pukul ${fmtJam(s.scan_mulai)}</button>`;
   }
   let siswa = '';
-  if (bisaScan && s.peran === 'guru' && s.bisa_absen_murid) {
+  if (bisaScan && s.bisa_absen_murid) {
     const sudahAbsen = s.status === 'hadir' || s.status === 'terlambat';
     const tercatat = s.siswa?.tercatat > 0;
     if (sudahAbsen) {
       if (tercatat) siswa += `<div class="info info-hijau">${ikon.centang(16)}<span>Absensi siswa: <b>${s.siswa.hadir} dari ${s.siswa.total}</b> hadir${s.materi ? ' · materi sudah dicatat' : ' · materi belum diisi'}.</span></div>`;
-      siswa += `<a class="btn ${tercatat && s.materi ? 'btn-garis' : 'btn-utama'}" href="#/siswa?slot=${s.slot_id}">${ikon.orang2(20)} ${tercatat ? 'Ubah absensi siswa &amp; materi' : 'Absen Siswa'}</a>`;
+      if (s.absen_dikunci_oleh) siswa += `<button class="btn btn-abu" disabled>${ikon.orang2(20)} Absensi sedang dilakukan oleh ${esc(s.absen_dikunci_oleh)}</button>`;
+      else siswa += `<a class="btn ${tercatat && s.materi ? 'btn-garis' : 'btn-utama'}" href="#/siswa?slot=${s.slot_id}">${ikon.orang2(20)} ${tercatat ? 'Ubah absensi siswa &amp; materi' : 'Absen Siswa'}</a>`;
     } else if (s.status === 'belum' || s.status === 'nanti') {
       siswa = `<button class="btn btn-abu" disabled>Absen Siswa terbuka setelah Anda absen</button>`;
     }
@@ -133,6 +134,10 @@ export async function beranda(el, { ctx }) {
         </div>
       </div>
     </div>`;
+
+  // Status "Absensi sedang dilakukan" milik rekan setim ikut berubah tanpa refresh.
+  const segar = setInterval(() => document.visibilityState === 'visible' && ctx.muatUlangDiam(), 8000);
+  return () => clearInterval(segar);
 }
 
 export async function riwayat(el, { query }) {
