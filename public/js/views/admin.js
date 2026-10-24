@@ -100,12 +100,21 @@ export async function dashboard(el, { query, ctx }) {
 let P = 'kepala'; // 'kepala' atau 'wakil' (Wakil Kurikulum: hanya kelas jenjangnya)
 export async function tugas(el, { query, ctx }) {
   P = ctx.me.is_kepala ? 'kepala' : 'wakil';
-  const mode = ['pindah', 'kedua'].includes(query.mode) ? query.mode : 'pengganti';
+  const mode = ['pindah', 'kedua'].includes(query.mode) || (query.mode === 'gabung' && P === 'kepala') ? query.mode : 'pengganti';
   const d = await api(`/api/${P}/tugas?${qs({ tanggal: query.tanggal, slot_id: query.slot })}`);
   const slot = d.slots.find((s) => s.id === d.slot_id);
   const ke = (o) => ctx.pergi(`/${P}/tugas?${qs({ mode, tanggal: d.tanggal, slot: d.slot_id, ...o })}`);
   const tertutup = d.status_slot === 'selesai';
 
+  const namaKelas = (id) => d.kelas.find((k) => k.id === id)?.nama ?? '-';
+  const htmlGabung = (d.gabungan ?? []).length
+    ? d.gabungan.map((g) => `
+      <div class="kartu rapat"><div class="baris-antara">
+        <div class="tumpuk"><span class="tebal">${esc([g.induk_id, ...g.anak_ids].map(namaKelas).join(' + '))}</span>
+          <span class="kecil muted">Diajar tim kelas ${esc(namaKelas(g.induk_id))}${tertutup ? '' : ` · <a href="#/${P}/tugas?${qs({ mode: 'pengganti', tanggal: d.tanggal, slot: d.slot_id, kelas: g.induk_id })}">atur pengajar</a>`}</span></div>
+        ${tertutup ? '' : `<button class="btn btn-bahaya btn-kecil" style="width:auto" data-batal-gabung="${g.induk_id}">Batalkan</button>`}
+      </div></div>`).join('')
+    : '<div class="kosong" style="padding:12px">Belum ada kelas yang digabung di sesi ini.</div>';
   const daftarTugas = d.tugas.filter((t) => t.jenis === (mode === 'kedua' ? 'tambahan' : mode));
   const htmlTugas = daftarTugas.length
     ? daftarTugas.map((t) => `
@@ -122,7 +131,8 @@ export async function tugas(el, { query, ctx }) {
       <div class="seg tab-abu" role="tablist" style="margin:0 4px">
         <button role="tab" data-mode="pengganti" aria-selected="${mode === 'pengganti'}">Pengganti</button>
         <button role="tab" data-mode="kedua" aria-selected="${mode === 'kedua'}">Pembina 2</button>
-        <button role="tab" data-mode="pindah" aria-selected="${mode === 'pindah'}">Pindah Asisten</button>
+        <button role="tab" data-mode="pindah" aria-selected="${mode === 'pindah'}">Pindah</button>
+        ${P === 'kepala' ? `<button role="tab" data-mode="gabung" aria-selected="${mode === 'gabung'}">Gabung</button>` : ''}
       </div>
     </div>
     <div class="isi">
@@ -135,9 +145,13 @@ export async function tugas(el, { query, ctx }) {
       ${!slot ? '<div class="kosong">Tidak ada sesi Sekolah Minggu di tanggal ini.</div>'
         : tertutup ? `<div class="info info-abu">${ikon.info()}<span>Sesi ini sudah selesai, penugasan tidak bisa diubah lagi.</span></div>`
         : '<div id="form-tugas" class="tumpuk" style="gap:12px"></div>'}
-      ${slot ? `<h2 class="judul-seksi">${mode === 'pengganti' ? 'Pengganti' : mode === 'kedua' ? 'Pembina kedua (harian)' : 'Pindahan'} di sesi ini</h2><div class="tumpuk" style="gap:10px" id="daftar">${htmlTugas}</div>` : ''}
+      ${slot ? (mode === 'gabung'
+        ? `<h2 class="judul-seksi">Gabungan di sesi ini</h2><div class="tumpuk" style="gap:10px" id="daftar">${htmlGabung}</div>`
+        : `<h2 class="judul-seksi">${mode === 'pengganti' ? 'Pengganti' : mode === 'kedua' ? 'Pembina kedua (harian)' : 'Pindahan'} di sesi ini</h2><div class="tumpuk" style="gap:10px" id="daftar">${htmlTugas}</div>`) : ''}
       <div class="info info-abu">${ikon.info()}<span>${mode === 'pengganti'
         ? 'Penugasan bukan input kehadiran. Pengganti tetap harus scan QR pada hari H.'
+        : mode === 'gabung'
+        ? 'Kelas yang digabung diajar tim kelas induk (atau pengganti yang ditunjuk di tab Pengganti). Absensi siswa dan materi diisi sekali, tetap tersimpan per kelas. Pembina kelas yang digabung tetap tercatat izin, bukan alpa. Honor pengajar dihitung satu sesi seperti biasa. Hanya berlaku pada tanggal dan sesi ini.'
         : mode === 'kedua'
         ? 'Satu kelas boleh punya sampai 2 pembina, dan hanya Kepala SMB atau Wakil Kurikulum yang bisa menetapkan pembina kedua. Pembina kedua tetap harus scan QR dan ikut mendapat honor pembina.'
         : 'Hanya Kepala SMB atau Wakil Kurikulum yang bisa memindahkan asisten. Hari itu asisten hanya bisa scan di kelas tujuan.'}</span></div>
@@ -148,6 +162,17 @@ export async function tugas(el, { query, ctx }) {
   el.addEventListener('click', async (e) => {
     const m = e.target.closest('[data-mode]');
     if (m) return ctx.pergi(`/${P}/tugas?${qs({ mode: m.dataset.mode, tanggal: d.tanggal, slot: d.slot_id })}`);
+    const bg = e.target.closest('[data-batal-gabung]');
+    if (bg && confirm('Batalkan gabungan kelas ini? Setiap kelas kembali diajar tim masing-masing.')) {
+      try {
+        await api(`/api/gabung?${qs({ tanggal: d.tanggal, slot_id: d.slot_id, induk_id: bg.dataset.batalGabung })}`, { method: 'DELETE' });
+        toast('Gabungan dibatalkan.');
+        ctx.muatUlang();
+      } catch (err) {
+        toast(err.message, 'galat');
+      }
+      return;
+    }
     const h = e.target.closest('[data-hapus]');
     if (h && confirm('Batalkan penugasan ini?')) {
       try {
@@ -164,7 +189,77 @@ export async function tugas(el, { query, ctx }) {
   if (!wadah) return;
   if (mode === 'pengganti') await formPengganti(wadah, d, query, ctx);
   else if (mode === 'kedua') await formKedua(wadah, d, query, ctx);
+  else if (mode === 'gabung') formGabung(wadah, d, query, ctx);
   else formPindah(wadah, d, query, ctx);
+}
+
+// Gabung kelas (hanya Kepala SMB): pilih kelas induk lalu kelas-kelas yang ikut bergabung di sesi ini.
+function formGabung(wadah, d, query, ctx) {
+  const terpakai = new Set((d.gabungan ?? []).flatMap((g) => [g.induk_id, ...g.anak_ids]));
+  const bebas = d.kelas.filter((k) => !terpakai.has(k.id));
+  if (bebas.length < 2) {
+    wadah.innerHTML = `<div class="info info-abu">${ikon.info()}<span>Belum ada dua kelas yang bisa digabung di sesi ini. Kelas yang sudah masuk gabungan lain tidak ditampilkan.</span></div>`;
+    return;
+  }
+  let induk = bebas.some((k) => k.id === Number(query.kelas)) ? Number(query.kelas) : bebas[0].id;
+  const dipilih = new Set();
+  const murid = (id) => d.jumlah_murid?.[id] ?? 0;
+  const pembina = (id) => {
+    const p = d.kelas_pembina?.[id] ?? [];
+    const lab = { izin: 'izin', hadir: 'hadir', terlambat: 'terlambat', belum: 'belum scan', nanti: 'terjadwal', alpa: 'alpa' };
+    return p.length ? p.map((x) => `${esc(x.nama)} (${lab[x.status] ?? x.status})`).join(', ') : 'belum ada pembina';
+  };
+
+  const gambar = () => {
+    for (const id of [...dipilih]) if (id === induk) dipilih.delete(id);
+    wadah.querySelector('#anak').innerHTML = bebas.filter((k) => k.id !== induk).map((k) => `
+      <button type="button" class="pilih-kelas" data-anak="${k.id}" aria-pressed="${dipilih.has(k.id)}">
+        <span class="kotak"></span>
+        <span class="tumpuk"><span class="nama">${esc(k.nama)}</span><span class="kecil muted">Pembina: ${pembina(k.id)} · ${murid(k.id)} murid</span></span>
+      </button>`).join('');
+    const total = murid(induk) + [...dipilih].reduce((n, id) => n + murid(id), 0);
+    wadah.querySelector('#total').textContent = dipilih.size
+      ? `Total murid: ${[induk, ...dipilih].map(murid).join(' + ')} = ${total} murid dalam kelas gabungan.`
+      : 'Centang kelas yang ikut bergabung.';
+    wadah.querySelector('#induk-info').textContent = `Pembina ${d.kelas.find((k) => k.id === induk)?.nama ?? ''}: ` + pembina(induk).replace(/<[^>]+>/g, '');
+    const tombol = wadah.querySelector('#gabungkan');
+    tombol.disabled = !dipilih.size;
+    tombol.textContent = dipilih.size ? 'Gabungkan kelas' : 'Pilih kelas yang digabung';
+  };
+
+  wadah.innerHTML = `
+    <div class="kartu">
+      <span class="label-kecil">Gabungkan kelas</span>
+      <div class="field"><label for="induk">Kelas induk (tempat berkumpul)</label><select class="input" id="induk">
+        ${bebas.map((k) => `<option value="${k.id}" ${k.id === induk ? 'selected' : ''}>${esc(k.nama)}</option>`).join('')}</select>
+        <span class="kecil muted" id="induk-info"></span></div>
+      <div class="field"><span class="label">Kelas yang digabung ke kelas induk</span><div class="tumpuk" style="gap:8px" id="anak"></div></div>
+      <div class="info info-hijau" id="total-kotak">${ikon.info()}<span id="total"></span></div>
+      <button class="btn btn-utama" id="gabungkan" disabled>Pilih kelas yang digabung</button>
+    </div>`;
+
+  wadah.querySelector('#induk').addEventListener('change', (e) => { induk = Number(e.target.value); gambar(); });
+  wadah.addEventListener('click', async (e) => {
+    const a = e.target.closest('[data-anak]');
+    if (a) {
+      const id = Number(a.dataset.anak);
+      if (dipilih.has(id)) dipilih.delete(id); else dipilih.add(id);
+      return gambar();
+    }
+    if (!e.target.closest('#gabungkan')) return;
+    const nama = [induk, ...dipilih].map((id) => d.kelas.find((k) => k.id === id)?.nama).join(' + ');
+    if (!confirm(`Gabungkan ${nama} pada sesi ini?`)) return;
+    e.target.closest('#gabungkan').disabled = true;
+    try {
+      await api('/api/gabung', { method: 'POST', body: { tanggal: d.tanggal, slot_id: d.slot_id, induk_id: induk, anak_ids: [...dipilih] } });
+      toast('Kelas digabung. Pastikan kelas induk punya pengajar.');
+      ctx.pergi(`/${P}/tugas?${qs({ mode: 'gabung', tanggal: d.tanggal, slot: d.slot_id })}`);
+    } catch (err) {
+      toast(err.message, 'galat');
+      e.target.closest('#gabungkan').disabled = false;
+    }
+  });
+  gambar();
 }
 
 // Siapa yang bertugas di satu kelas pada sesi ini: pembina (baris rapi, dengan status) dan asisten (ringkas).

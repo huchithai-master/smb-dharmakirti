@@ -32,7 +32,8 @@ export async function absenSiswa(el, { query, ctx }) {
         <div class="baris-antara"><span class="label-kecil">1. Daftar siswa</span><span class="kecil muted" id="ringkas"></span></div>
         <button class="btn btn-netral btn-kecil" type="button" id="semua-hadir">Tandai semua hadir</button>
         <div class="tumpuk" style="gap:12px" id="daftar">
-          ${d.murid.map((m) => `
+          ${d.murid.map((m, i) => `
+            ${d.gabung && (i === 0 || d.murid[i - 1].kelas_id !== m.kelas_id) ? `<div class="bagian-kelas">Kelas ${esc(m.kelas_nama)} <span class="lencana-kecil">${d.murid.filter((x) => x.kelas_id === m.kelas_id).length} murid</span></div>` : ''}
             <div class="tumpuk" style="gap:6px">
               <div style="display:flex;align-items:center;gap:10px"><span class="avatar kecil">${esc(inisial(m.nama))}</span><span class="tebal">${esc(m.nama)}</span></div>
               <div class="seg" data-murid="${m.id}" role="group" aria-label="Status ${esc(m.nama)}">
@@ -46,6 +47,7 @@ export async function absenSiswa(el, { query, ctx }) {
       <section class="kartu" id="bagian-materi">
         <span class="label-kecil">${d.murid.length ? '2. ' : ''}Materi hari ini</span>
         <div class="info info-abu" id="kunci">${ikon.info()}<span>Simpan absensi siswa dulu, lalu isi materi yang diajarkan.</span></div>
+        ${d.gabung ? `<div class="info info-abu">${ikon.info()}<span>Materi ini otomatis tercatat untuk ${esc(d.kelas_list.map((k) => k.nama).join(' dan '))}.</span></div>` : ''}
         <div class="field"><label for="materi">Materi yang diajarkan</label>
           <textarea class="input" id="materi" maxlength="1000" placeholder="Contoh: Kisah Buddha dan Angulimala, nilai kasih sayang">${esc(d.materi)}</textarea></div>
         <button class="btn btn-utama" type="button" id="simpan-materi">Simpan materi</button>

@@ -60,7 +60,7 @@ function kartuSesi(s, bisaScan, namaSaya) {
     if (sudahAbsen) {
       if (tercatat) siswa += `<div class="info info-hijau">${ikon.centang(16)}<span>Absensi siswa: <b>${s.siswa.hadir} dari ${s.siswa.total}</b> hadir${s.materi ? ' · materi sudah dicatat' : ' · materi belum diisi'}.</span></div>`;
       if (s.absen_dikunci_oleh) siswa += `<button class="btn btn-abu" disabled>${ikon.orang2(20)} Absensi sedang dilakukan oleh ${esc(s.absen_dikunci_oleh)}</button>`;
-      else siswa += `<a class="btn ${tercatat && s.materi ? 'btn-garis' : 'btn-utama'}" href="#/siswa?slot=${s.slot_id}">${ikon.orang2(20)} ${tercatat ? 'Ubah absensi siswa &amp; materi' : 'Absen Siswa'}</a>`;
+      else siswa += `<a class="btn ${tercatat && s.materi ? 'btn-garis' : 'btn-utama'}" href="#/siswa?slot=${s.slot_id}">${ikon.orang2(20)} ${tercatat ? 'Ubah absensi siswa &amp; materi' : 'Absen Siswa'}${s.gabung ? ` (${esc(s.gabung.nama)})` : ''}</a>`;
     } else if (s.status === 'belum' || s.status === 'nanti') {
       siswa = `<button class="btn btn-abu" disabled>Absen Siswa terbuka setelah Anda absen</button>`;
     }
@@ -75,6 +75,7 @@ function kartuSesi(s, bisaScan, namaSaya) {
         </div>
         ${chip(s.status)}
       </div>
+      ${s.gabung ? `<div class="info info-utama">${ikon.info()}<span><b>Kelas digabung:</b> ${esc(s.gabung.nama)} · ${s.gabung.jumlah_murid} murid. Diajar tim kelas induk, absensi siswa diisi sekali.</span></div>` : ''}
       ${s.raya ? '' : daftarTim(s, namaSaya)}
       ${ket}
       <div class="info info-abu">${ikon.jam(16)}<span>${infoSesi(s)}</span></div>
