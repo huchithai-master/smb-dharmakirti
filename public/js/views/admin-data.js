@@ -54,7 +54,7 @@ export async function lainnya(el, { ctx }) {
       <div class="menu-grup">
         ${item('#/admin/pengguna', ikon.orang2(), 'Data Pembina &amp; Asisten', 'Pembina, asisten, cadangan, petugas & admin')}
         ${item('#/admin/murid', ikon.orang(), 'Data Murid', 'NIK, kelas, orang tua, dan asal sekolah')}
-        ${item('#/admin/libur', ikon.kalender(), 'Hari Libur', 'Libur harian dengan alasan dan libur semester')}
+        ${item('#/admin/libur', ikon.kalender(), 'Hari Libur', 'Libur harian, libur semester, dan Hari Raya')}
         ${item('#/admin/kelas', ikon.buku(), 'Kelas', 'Daftar kelas Sekolah Minggu')}
         ${item('#/admin/slot', ikon.jam(), 'Slot &amp; Mode Absen', 'Jam sesi, jendela scan, konfirmasi atau absen masuk')}
       </div>

@@ -429,20 +429,21 @@ export async function libur(el, { ctx }) {
   const baris = (l, bisaHapus) => `
     <div class="kartu rapat"><div class="baris-antara">
       <div class="tumpuk"><span class="tebal">${esc(l.alasan)}</span>
-        <span class="kecil muted">${l.jenis === 'semester' ? 'Libur semester' : 'Libur harian'} · ${esc(rentang(l))}</span></div>
+        <span class="kecil muted">${l.jenis === 'semester' ? 'Libur semester' : l.jenis === 'raya' ? 'Hari Raya' : 'Libur harian'} · ${esc(rentang(l))}${l.jenis === 'raya' ? ` · absen kedatangan ${esc(fmtJam(l.scan_mulai))}–${esc(fmtJam(l.scan_selesai))}` : ''}</span></div>
       ${bisaHapus ? `<button class="btn btn-bahaya btn-kecil" style="width:auto" data-hapus="${l.id}">Hapus</button>` : ''}
     </div></div>`;
 
   el.innerHTML = `
     ${hdrKembali('Hari Libur', '#/admin/lainnya')}
     <div class="isi">
-      <div class="info info-abu">${ikon.info()}<span>Pada hari libur tidak ada sesi: pengajar tidak perlu scan, tidak dihitung alpa, dan tidak ada honor sesi.</span></div>
+      <div class="info info-abu" id="ket">${ikon.info()}<span id="ket-isi"></span></div>
       <form class="kartu" id="form" novalidate>
         <span class="label-kecil">Tambah libur</span>
         <div class="galat" id="galat" role="alert"></div>
         <div class="seg" id="jenis">
           <button type="button" data-j="harian" aria-pressed="true">Libur harian</button>
           <button type="button" data-j="semester" aria-pressed="false">Libur semester</button>
+          <button type="button" data-j="raya" aria-pressed="false">Hari Raya</button>
         </div>
         <div class="grid2 kolom-hp">
           <div class="field"><label for="mulai" id="l-mulai">Tanggal</label><input class="input" type="date" id="mulai" min="${d.hari_ini}" required></div>
@@ -450,6 +451,13 @@ export async function libur(el, { ctx }) {
         </div>
         <div class="field"><label for="alasan" id="l-alasan">Alasan libur</label>
           <input class="input" id="alasan" maxlength="120" placeholder="Contoh: Hari Waisak"></div>
+        <div id="bagian-raya" hidden>
+          <div class="grid2 kolom-hp">
+            <div class="field"><label for="scan-mulai">Absen dibuka mulai</label><input class="input" type="time" id="scan-mulai" value="07:00"></div>
+            <div class="field"><label for="scan-selesai">Absen ditutup pukul</label><input class="input" type="time" id="scan-selesai" value="10:00"></div>
+          </div>
+          <div class="info info-oranye" style="margin-top:10px">${ikon.info()}<span><b>Mode Hari Raya.</b> Sesi pagi dan siang digabung jadi satu <b>Absen Kedatangan</b> untuk semua pembina dan asisten. Cukup tercatat hadir (tanpa terlambat), tanpa absen siswa dan absen pulang. Honor dihitung satu sesi, izin tetap bisa diajukan.</span></div>
+        </div>
         <button class="btn btn-utama" type="submit">Simpan libur</button>
       </form>
       <h2 class="judul-seksi">Akan datang (${akan.length})</h2>
@@ -461,9 +469,13 @@ export async function libur(el, { ctx }) {
   function sinkron() {
     for (const b of el.querySelectorAll('#jenis [data-j]')) b.setAttribute('aria-pressed', String(b.dataset.j === jenis));
     $('bagian-selesai').hidden = jenis !== 'semester';
+    $('bagian-raya').hidden = jenis !== 'raya';
     $('l-mulai').textContent = jenis === 'semester' ? 'Mulai tanggal' : 'Tanggal';
-    $('l-alasan').textContent = jenis === 'semester' ? 'Nama libur (opsional)' : 'Alasan libur';
-    $('alasan').placeholder = jenis === 'semester' ? 'Libur Semester Ganjil' : 'Contoh: Hari Waisak';
+    $('l-alasan').textContent = jenis === 'semester' ? 'Nama libur (opsional)' : jenis === 'raya' ? 'Nama hari raya' : 'Alasan libur';
+    $('alasan').placeholder = jenis === 'semester' ? 'Libur Semester Ganjil' : jenis === 'raya' ? 'Contoh: Hari Raya Waisak' : 'Contoh: Hari Waisak';
+    $('ket-isi').textContent = jenis === 'raya'
+      ? 'Pada Hari Raya semua sesi digabung menjadi satu absen kedatangan.'
+      : 'Pada hari libur tidak ada sesi: pengajar tidak perlu scan, tidak dihitung alpa, dan tidak ada honor sesi.';
   }
   el.addEventListener('click', async (e) => {
     const j = e.target.closest('#jenis [data-j]');
@@ -489,7 +501,10 @@ export async function libur(el, { ctx }) {
     try {
       await api('/api/admin/libur', {
         method: 'POST',
-        body: { jenis, mulai: $('mulai').value, selesai: jenis === 'semester' ? $('selesai').value : null, alasan: $('alasan').value },
+        body: {
+          jenis, mulai: $('mulai').value, selesai: jenis === 'semester' ? $('selesai').value : null, alasan: $('alasan').value,
+          ...(jenis === 'raya' ? { scan_mulai: $('scan-mulai').value, scan_selesai: $('scan-selesai').value } : {}),
+        },
       });
       toast('Libur tersimpan.');
       ctx.muatUlang();

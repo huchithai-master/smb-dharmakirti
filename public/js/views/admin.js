@@ -34,7 +34,7 @@ export async function dashboard(el, { query, ctx }) {
   const stat = !r ? [] : [
     ['Pembina hadir', `${pembina.hadir}/${pembina.total}`, pembina.izin ? `${pembina.izin} izin` : ''],
     ['Asisten hadir', `${asisten.hadir}/${asisten.total}`, asisten.izin ? `${asisten.izin} izin` : ''],
-    ['Murid hadir', `${muridHadir}/${semuaMurid.length}`, semuaMurid.some((m) => m.status) ? '' : 'belum diabsen'],
+    ...(d.data?.raya ? [] : [['Murid hadir', `${muridHadir}/${semuaMurid.length}`, semuaMurid.some((m) => m.status) ? '' : 'belum diabsen']]),
   ];
   const STATUS_MURID = [['hadir', 'Hadir'], ['izin', 'Izin'], ['sakit', 'Sakit'], ['alpa', 'Alpa'], [null, 'Belum diabsen']];
   const detailMurid = (k) => {
@@ -64,7 +64,8 @@ export async function dashboard(el, { query, ctx }) {
     <div class="angkat">${d.slots.length ? tabSlot(d.slots, d.slot_id) : (d.libur ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span><span class="kecil muted">${d.libur.jenis === 'semester' ? 'Libur semester' : 'Libur harian'} · tidak ada sesi dan tidak ada alpa.</span></div>` : '<div class="kartu bayang"><span class="muted">Tidak ada sesi di tanggal ini.</span></div>')}</div>
     <div class="isi">
       ${subNav('dashboard')}
-      ${r ? `<div class="stat-grid tiga">${stat.map(([l, n, ket]) => `<div class="stat"><b>${n}</b><span style="color:var(--utama)">${l}</span>${ket ? `<small class="muted">${ket}</small>` : ''}</div>`).join('')}</div>` : ''}
+      ${d.data?.raya ? `<div class="info info-oranye">${ikon.info()}<span><b>${esc(d.libur?.alasan ?? 'Hari Raya')}</b> · semua pembina dan asisten absen kedatangan satu kali (${fmtJam(slot.scan_mulai)}–${fmtJam(slot.scan_selesai)}).</span></div>` : ''}
+      ${r ? `<div class="stat-grid ${d.data?.raya ? 'dua' : 'tiga'}">${stat.map(([l, n, ket]) => `<div class="stat"><b>${n}</b><span style="color:var(--utama)">${l}</span>${ket ? `<small class="muted">${ket}</small>` : ''}</div>`).join('')}</div>` : ''}
       ${d.data ? `<h2 class="judul-seksi">Status per kelas</h2>
         ${d.data.kelas.map((k) => {
           const perlu = k.anggota.filter((a) => a.status !== 'izin');

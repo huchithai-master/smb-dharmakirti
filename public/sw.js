@@ -1,6 +1,6 @@
 // Service worker: menyimpan tampilan aplikasi agar cepat dibuka dan tetap tampil saat sinyal lemah.
 // Data (/api/) selalu diambil dari server dan tidak disimpan.
-const VERSI = 'smbh-v34';
+const VERSI = 'smbh-v35';
 const ASET = [
   '/',
   '/index.html',

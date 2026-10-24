@@ -4,6 +4,9 @@ import {
 } from '../ui.js';
 
 function infoSesi(s) {
+  if (s.raya) {
+    return `<b>Absen kedatangan.</b> Scan di petugas pintu masuk pukul ${fmtJam(s.scan_mulai)}–${fmtJam(s.scan_selesai)}. Cukup tercatat hadir, tanpa status terlambat.`;
+  }
   if (s.mode === 'konfirmasi') {
     return `<b>Konfirmasi ${fmtJam(s.scan_mulai)}–${fmtJam(s.scan_selesai)}.</b> Petugas akan datang ke kelas. Tidak ada status terlambat.`;
   }
@@ -31,7 +34,7 @@ function daftarTim(s, namaSaya) {
 }
 
 function kartuSesi(s, bisaScan, namaSaya) {
-  const ket = s.keterangan ? `<span class="info info-ungu">${ikon.info()}<span>${esc(s.keterangan)}</span></span>` : '';
+  const ket = s.keterangan && !s.raya ? `<span class="info info-ungu">${ikon.info()}<span>${esc(s.keterangan)}</span></span>` : '';
   let aksi = '';
   if (s.status === 'hadir' || s.status === 'terlambat') {
     aksi = `<div class="info info-hijau">${ikon.centang(16)}<span>Tercatat ${s.status === 'terlambat' ? 'terlambat' : 'hadir'} pukul <b>${fmtJam(s.jam)}</b>.</span></div>`;
@@ -67,12 +70,12 @@ function kartuSesi(s, bisaScan, namaSaya) {
     <div class="kartu">
       <div class="baris-antara" style="align-items:flex-start">
         <div class="tumpuk" style="gap:4px">
-          <span class="slot-label ${s.status_slot === 'buka' ? '' : 'abu'}">Slot ${esc(s.slot_nama)} · ${fmtJam(s.jam_mulai)}–${fmtJam(s.jam_selesai)}</span>
-          <span class="nama-kelas">Kelas ${esc(s.kelas_nama)}</span>
+          <span class="slot-label ${s.status_slot === 'buka' ? '' : 'abu'}">${s.raya ? `${esc(s.slot_nama)} · Absen Kedatangan · ${fmtJam(s.scan_mulai)}` : `Slot ${esc(s.slot_nama)} · ${fmtJam(s.jam_mulai)}–${fmtJam(s.jam_selesai)}`}</span>
+          <span class="nama-kelas">${s.raya ? 'Semua pembina &amp; asisten' : `Kelas ${esc(s.kelas_nama)}`}</span>
         </div>
         ${chip(s.status)}
       </div>
-      ${daftarTim(s, namaSaya)}
+      ${s.raya ? '' : daftarTim(s, namaSaya)}
       ${ket}
       <div class="info info-abu">${ikon.jam(16)}<span>${infoSesi(s)}</span></div>
       ${izinMenunggu}
@@ -92,6 +95,10 @@ export async function beranda(el, { ctx }) {
       : `<div class="kartu"><div class="kosong" style="padding:16px">Tidak ada jadwal mengajar hari ini.</div></div>`;
   const berikut = d.berikutnya
     ? `<h2 class="judul-seksi">Jadwal berikutnya · ${esc(fmtTanggal(d.berikutnya.tanggal, 'pendek'))}</h2>${d.berikutnya.sesi.map((s) => kartuSesi(s, false, me.nama)).join('')}`
+    : '';
+
+  const bannerRaya = d.libur?.jenis === 'raya' && d.sesi.some((x) => x.raya)
+    ? `<div class="info info-oranye">${ikon.info()}<span><b>${esc(d.libur.alasan)}</b>. Hari ini tidak ada kelas: semua pembina dan asisten absen kedatangan satu kali. Honor tetap dihitung.</span></div>`
     : '';
 
   el.innerHTML = `
@@ -119,6 +126,7 @@ export async function beranda(el, { ctx }) {
     </div>
     <div class="isi">
       <h2 class="judul-seksi">Jadwal Mengajar Hari Ini <a href="#/riwayat">Lihat riwayat</a></h2>
+      ${bannerRaya}
       ${sesiHariIni}
       ${berikut}
       <h2 class="judul-seksi">Kehadiran ${esc(fmtBulan(d.bulan.bulan))}</h2>
