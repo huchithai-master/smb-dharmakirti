@@ -28,24 +28,22 @@ export const dashboardWakil = (el, a) => tampilDashboard(el, a, {
   api: '/api/wakil/dashboard', base: '/wakil/dashboard', lencana: 'Wakil Kurikulum', subnav: () => subNavKepala('dashboard', true), atas: '',
 });
 
-async function tampilDashboard(el, { query, ctx }, o) {
-  const d = await api(`${o.api}?${qs({ slot_id: query.slot })}`);
-  const slot = d.slots.find((s) => s.id === d.slot_id);
-  const r = d.data?.ringkasan;
+function blokSlot(data, slot, libur) {
+  const r = data?.ringkasan;
   // Ringkasan kehadiran: pembina, asisten, dan murid (dihitung dari semua kelas di slot ini).
-  const orang = (d.data?.kelas ?? []).flatMap((k) => k.anggota);
+  const orang = (data?.kelas ?? []).flatMap((k) => k.anggota);
   const hitungPengajar = (peran) => {
     const a = orang.filter((x) => x.peran === peran);
     return { total: a.length, hadir: a.filter((x) => x.status === 'hadir' || x.status === 'terlambat').length, izin: a.filter((x) => x.status === 'izin').length };
   };
   const pembina = hitungPengajar('guru');
   const asisten = hitungPengajar('asisten');
-  const semuaMurid = (d.data?.kelas ?? []).flatMap((k) => k.murid ?? []);
+  const semuaMurid = (data?.kelas ?? []).flatMap((k) => k.murid ?? []);
   const muridHadir = semuaMurid.filter((m) => m.status === 'hadir').length;
   const stat = !r ? [] : [
     ['Pembina hadir', `${pembina.hadir}/${pembina.total}`, pembina.izin ? `${pembina.izin} izin` : ''],
     ['Asisten hadir', `${asisten.hadir}/${asisten.total}`, asisten.izin ? `${asisten.izin} izin` : ''],
-    ...(d.data?.raya ? [] : [['Murid hadir', `${muridHadir}/${semuaMurid.length}`, semuaMurid.some((m) => m.status) ? '' : 'belum diabsen']]),
+    ...(data?.raya ? [] : [['Murid hadir', `${muridHadir}/${semuaMurid.length}`, semuaMurid.some((m) => m.status) ? '' : 'belum diabsen']]),
   ];
   const STATUS_MURID = [['hadir', 'Hadir'], ['izin', 'Izin'], ['sakit', 'Sakit'], ['alpa', 'Alpa'], [null, 'Belum diabsen']];
   const detailMurid = (k) => {
@@ -61,24 +59,11 @@ async function tampilDashboard(el, { query, ctx }, o) {
     </details>`;
   };
 
-  el.innerHTML = `
-    <div class="hdr" style="padding-bottom:60px">
-      <div class="hdr-atas">
-        <div class="merek"><img class="merek-logo" src="/icons/logo-smb.png" alt="" width="26" height="31"> SMB Dharmakirti <span class="lencana">${o.lencana}</span></div>
-        ${o.atas}
-      </div>
-      <div class="baris-antara" style="align-items:flex-end">
-        <div class="tumpuk"><span class="sub">${esc(fmtTanggal(d.tanggal))}</span>
-          <h1>${d.tanggal === d.hari_ini ? 'Kehadiran Hari Ini' : 'Kehadiran'}</h1></div>
-      </div>
-    </div>
-    <div class="angkat">${d.slots.length ? tabSlot(d.slots, d.slot_id) : (d.libur ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span><span class="kecil muted">${d.libur.jenis === 'semester' ? 'Libur semester' : 'Libur harian'} · tidak ada sesi dan tidak ada alpa.</span></div>` : '<div class="kartu bayang"><span class="muted">Tidak ada sesi di tanggal ini.</span></div>')}</div>
-    <div class="isi">
-      ${o.subnav()}
-      ${d.data?.raya ? `<div class="info info-oranye">${ikon.info()}<span><b>${esc(d.libur?.alasan ?? 'Hari Raya')}</b> · semua pembina dan asisten absen kedatangan satu kali (${fmtJam(slot.scan_mulai)}–${fmtJam(slot.scan_selesai)}).</span></div>` : ''}
-      ${r ? `<div class="stat-grid ${d.data?.raya ? 'dua' : 'tiga'}">${stat.map(([l, n, ket]) => `<div class="stat"><b>${n}</b><span style="color:var(--utama)">${l}</span>${ket ? `<small class="muted">${ket}</small>` : ''}</div>`).join('')}</div>` : ''}
-      ${d.data ? `<h2 class="judul-seksi">Status per kelas</h2>
-        ${d.data.kelas.map((k) => {
+  return `
+      ${data?.raya ? `<div class="info info-oranye">${ikon.info()}<span><b>${esc(libur?.alasan ?? 'Hari Raya')}</b> · semua pembina dan asisten absen kedatangan satu kali (${fmtJam(slot.scan_mulai)}–${fmtJam(slot.scan_selesai)}).</span></div>` : ''}
+      ${r ? `<div class="stat-grid ${data?.raya ? 'dua' : 'tiga'}">${stat.map(([l, n, ket]) => `<div class="stat"><b>${n}</b><span style="color:var(--utama)">${l}</span>${ket ? `<small class="muted">${ket}</small>` : ''}</div>`).join('')}</div>` : ''}
+      ${data ? `<h2 class="judul-seksi">Status per kelas</h2>
+        ${data.kelas.map((k) => {
           const perlu = k.anggota.filter((a) => a.status !== 'izin');
           const hadir = perlu.filter((a) => a.status === 'hadir' || a.status === 'terlambat').length;
           const lengkap = perlu.length && hadir === perlu.length;
@@ -93,6 +78,30 @@ async function tampilDashboard(el, { query, ctx }, o) {
               ${chip(a.status)}</div>`).join('')}
           </div>`;
         }).join('') || '<div class="kosong">Belum ada pengajar terjadwal di slot ini.</div>'}` : ''}
+  `;
+}
+
+async function tampilDashboard(el, { query, ctx }, o) {
+  const d = await api(`${o.api}?${qs({ slot_id: query.slot })}`);
+  const slot = d.slots?.find((s) => s.id === d.slot_id);
+  el.innerHTML = `
+    <div class="hdr" style="padding-bottom:60px">
+      <div class="hdr-atas">
+        <div class="merek"><img class="merek-logo" src="/icons/logo-smb.png" alt="" width="26" height="31"> SMB Dharmakirti <span class="lencana">${o.lencana}</span></div>
+        ${o.atas}
+      </div>
+      <div class="baris-antara" style="align-items:flex-end">
+        <div class="tumpuk"><span class="sub">${esc(fmtTanggal(d.tanggal))}</span>
+          <h1>${d.tanggal === d.hari_ini ? 'Kehadiran Hari Ini' : 'Kehadiran'}</h1></div>
+      </div>
+    </div>
+    <div class="angkat">${d.bagian ? (d.bagian.length ? '' : '<div class="kartu bayang"><span class="muted">Tidak ada sesi untuk kelas Anda di tanggal ini.</span></div>') + `<div style="margin-top:${d.bagian.length ? '0' : '12px'}">${o.subnav()}</div>` : d.slots.length ? tabSlot(d.slots, d.slot_id) : (d.libur ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span><span class="kecil muted">${d.libur.jenis === 'semester' ? 'Libur semester' : 'Libur harian'} · tidak ada sesi dan tidak ada alpa.</span></div>` : '<div class="kartu bayang"><span class="muted">Tidak ada sesi di tanggal ini.</span></div>')}</div>
+    <div class="isi">
+      ${d.bagian ? '' : o.subnav()}
+      ${d.libur && d.bagian ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span></div>` : ''}
+      ${d.bagian
+        ? d.bagian.map((b) => `<h2 class="judul-seksi" style="margin-top:8px">Slot ${esc(b.slot.nama)} · ${b.slot.mode === 'konfirmasi' ? 'Konfirmasi ' + fmtJam(b.slot.scan_mulai) : 'Absen masuk ' + fmtJam(b.slot.jam_mulai)}</h2>${blokSlot(b.data, b.slot, d.libur)}`).join('')
+        : blokSlot(d.data, slot, d.libur)}
     </div>`;
 
   const ke = (x) => ctx.pergi(`${o.base}?${qs({ slot: d.slot_id, ...x })}`);
