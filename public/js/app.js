@@ -45,6 +45,7 @@ const RUTE = [
   { path: '/kepala/tugas', view: admin.tugas, perlu: 'is_kepala', nav: 'kepala' },
   { path: '/kepala/lainnya', view: kepala.lainnya, perlu: 'is_kepala', nav: 'kepala' },
   { path: '/wakil', view: kepala.beranda, perlu: 'is_wakil', nav: 'wakil' },
+  { path: '/wakil/dashboard', view: admin.dashboardWakil, perlu: 'is_wakil', nav: 'wakil' },
   { path: '/wakil/tugas', view: admin.tugas, perlu: 'is_wakil', nav: 'wakil' },
   { path: '/admin/lainnya', view: data.lainnya, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/pengguna', view: data.daftarPengguna, perlu: 'is_admin', nav: 'admin' },

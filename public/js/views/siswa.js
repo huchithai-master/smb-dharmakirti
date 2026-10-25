@@ -20,7 +20,7 @@ export async function absenSiswa(el, { query, ctx }) {
       <a class="btn btn-utama" href="#/">Kembali ke Beranda</a></div>`;
     return;
   }
-  const status = new Map(d.murid.map((m) => [m.id, m.status ?? 'hadir']));
+  const status = new Map(d.murid.map((m) => [m.id, m.status ?? null]));
   let tersimpan = d.absensi_tersimpan || d.murid.length === 0;
 
   el.innerHTML = `
@@ -30,17 +30,19 @@ export async function absenSiswa(el, { query, ctx }) {
       ${d.murid.length ? `
       <section class="kartu">
         <div class="baris-antara"><span class="label-kecil">1. Daftar siswa</span><span class="kecil muted" id="ringkas"></span></div>
-        <button class="btn btn-netral btn-kecil" type="button" id="semua-hadir">Tandai semua hadir</button>
+        <div class="cari-murid"><input class="input" type="search" id="cari" placeholder="Cari nama siswa..." autocomplete="off" aria-label="Cari siswa"></div>
+        <button class="btn btn-netral btn-kecil" type="button" id="semua-hadir">Tandai yang belum diabsen = hadir</button>
         <div class="tumpuk" style="gap:12px" id="daftar">
           ${d.murid.map((m, i) => `
-            ${d.gabung && (i === 0 || d.murid[i - 1].kelas_id !== m.kelas_id) ? `<div class="bagian-kelas">Kelas ${esc(m.kelas_nama)} <span class="lencana-kecil">${d.murid.filter((x) => x.kelas_id === m.kelas_id).length} murid</span></div>` : ''}
-            <div class="tumpuk" style="gap:6px">
-              <div style="display:flex;align-items:center;gap:10px"><span class="avatar kecil">${esc(inisial(m.nama))}</span><span class="tebal">${esc(m.nama)}</span></div>
+            ${d.gabung && (i === 0 || d.murid[i - 1].kelas_id !== m.kelas_id) ? `<div class="bagian-kelas" data-bagian>Kelas ${esc(m.kelas_nama)} <span class="lencana-kecil">${d.murid.filter((x) => x.kelas_id === m.kelas_id).length} murid</span></div>` : ''}
+            <div class="tumpuk baris-murid" style="gap:6px" data-cari="${esc(m.nama.toLowerCase())}">
+              <div style="display:flex;align-items:center;gap:10px"><span class="avatar kecil">${esc(inisial(m.nama))}</span><span class="tebal">${esc(m.nama)}</span><span class="belum-tag">Belum diabsen</span></div>
               <div class="seg" data-murid="${m.id}" role="group" aria-label="Status ${esc(m.nama)}">
                 ${STATUS.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="false">${l}</button>`).join('')}
               </div>
             </div>`).join('')}
         </div>
+        <div class="kosong" id="cari-kosong" hidden>Tidak ada siswa dengan nama itu.</div>
         <button class="btn btn-utama" type="button" id="simpan-absen">Simpan absensi</button>
       </section>` : `
       <div class="info info-abu">${ikon.info()}<span>Belum ada siswa terdaftar di kelas ${esc(d.kelas_nama)}. Tambahkan murid lewat tab Data Murid.</span></div>`}
@@ -61,10 +63,16 @@ export async function absenSiswa(el, { query, ctx }) {
     for (const grup of el.querySelectorAll('[data-murid]')) {
       const aktif = status.get(Number(grup.dataset.murid));
       for (const b of grup.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === aktif));
+      grup.closest('.baris-murid').classList.toggle('belum', !aktif);
     }
-    const hitung = { hadir: 0, izin: 0, sakit: 0, alpa: 0 };
-    for (const s of status.values()) hitung[s]++;
-    if ($('ringkas')) $('ringkas').textContent = `${hitung.hadir} hadir · ${hitung.izin} izin · ${hitung.sakit} sakit · ${hitung.alpa} alpa`;
+    const hitung = { hadir: 0, izin: 0, sakit: 0, alpa: 0, belum: 0 };
+    for (const s of status.values()) hitung[s ?? 'belum']++;
+    if ($('ringkas')) $('ringkas').textContent = `${hitung.hadir} hadir · ${hitung.izin} izin · ${hitung.sakit} sakit · ${hitung.alpa} alpa${hitung.belum ? ` · ${hitung.belum} belum` : ''}`;
+    const simpan = $('simpan-absen');
+    if (simpan) {
+      simpan.disabled = hitung.belum > 0;
+      simpan.textContent = hitung.belum ? `Simpan absensi (${hitung.belum} siswa belum diabsen)` : 'Simpan absensi';
+    }
     $('materi').disabled = !tersimpan;
     $('simpan-materi').disabled = !tersimpan;
     $('kunci').hidden = tersimpan;
@@ -79,7 +87,7 @@ export async function absenSiswa(el, { query, ctx }) {
       return;
     }
     if (e.target.closest('#semua-hadir')) {
-      for (const k of status.keys()) status.set(k, 'hadir');
+      for (const [k, v] of status) if (!v) status.set(k, 'hadir');
       tersimpan = false;
       gambar();
       return;
@@ -119,6 +127,18 @@ export async function absenSiswa(el, { query, ctx }) {
         tombol.disabled = false;
       }
     }
+  });
+  // Cari siswa: saring daftar menurut nama; status yang sudah dipilih tidak hilang.
+  $('cari')?.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    let ada = 0;
+    for (const r of el.querySelectorAll('.baris-murid')) {
+      const cocok = !q || r.dataset.cari.includes(q);
+      r.hidden = !cocok;
+      if (cocok) ada++;
+    }
+    for (const h of el.querySelectorAll('[data-bagian]')) h.hidden = !!q;
+    $('cari-kosong').hidden = ada > 0;
   });
   gambar();
 
@@ -410,7 +430,7 @@ export async function formMuridPembina(el, { params, ctx }) {
     }
   });
   $('hapus')?.addEventListener('click', async () => {
-    if (!confirm(`Hapus permanen ${m.nama}? Data tidak bisa dikembalikan.`)) return;
+    if (!confirm(`Hapus permanen ${m.nama}? Seluruh riwayat absensinya juga ikut terhapus dan tidak bisa dikembalikan. Untuk menyimpan riwayat, gunakan Arsipkan.`)) return;
     try {
       await api(`/api/pembina/murid/${m.id}`, { method: 'DELETE' });
       toast('Murid dihapus.');

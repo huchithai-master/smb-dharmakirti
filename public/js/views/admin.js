@@ -1,5 +1,6 @@
 import { api } from '../api.js';
 import { esc, ikon, chip, fmtTanggal, fmtJam, peranLabel, toast, JENIS_IZIN } from '../ui.js';
+import { subNavKepala } from './kepala.js';
 
 export function subNav(aktif) {
   const item = [['dashboard', '#/admin', 'Dashboard'], ['lainnya', '#/admin/lainnya', 'Lainnya']];
@@ -17,8 +18,18 @@ function tabSlot(slots, slotId) {
     .join('')}</div>`;
 }
 
-export async function dashboard(el, { query, ctx }) {
-  const d = await api(`/api/admin/dashboard?${qs({ slot_id: query.slot })}`);
+export const dashboard = (el, a) => tampilDashboard(el, a, {
+  api: '/api/admin/dashboard', base: '/admin', lencana: 'Admin', subnav: () => subNav('dashboard'),
+  atas: `<a class="btn-ikon-terang" href="#/petugas" aria-label="Buka layar Petugas QR">${ikon.qr()}</a>`,
+});
+
+// Dashboard Wakil Kurikulum: tampilan sama dengan admin, hanya kelas di jenjangnya.
+export const dashboardWakil = (el, a) => tampilDashboard(el, a, {
+  api: '/api/wakil/dashboard', base: '/wakil/dashboard', lencana: 'Wakil Kurikulum', subnav: () => subNavKepala('dashboard', true), atas: '',
+});
+
+async function tampilDashboard(el, { query, ctx }, o) {
+  const d = await api(`${o.api}?${qs({ slot_id: query.slot })}`);
   const slot = d.slots.find((s) => s.id === d.slot_id);
   const r = d.data?.ringkasan;
   // Ringkasan kehadiran: pembina, asisten, dan murid (dihitung dari semua kelas di slot ini).
@@ -53,8 +64,8 @@ export async function dashboard(el, { query, ctx }) {
   el.innerHTML = `
     <div class="hdr" style="padding-bottom:60px">
       <div class="hdr-atas">
-        <div class="merek"><img class="merek-logo" src="/icons/logo-smb.png" alt="" width="26" height="31"> SMB Dharmakirti <span class="lencana">Admin</span></div>
-        <a class="btn-ikon-terang" href="#/petugas" aria-label="Buka layar Petugas QR">${ikon.qr()}</a>
+        <div class="merek"><img class="merek-logo" src="/icons/logo-smb.png" alt="" width="26" height="31"> SMB Dharmakirti <span class="lencana">${o.lencana}</span></div>
+        ${o.atas}
       </div>
       <div class="baris-antara" style="align-items:flex-end">
         <div class="tumpuk"><span class="sub">${esc(fmtTanggal(d.tanggal))}</span>
@@ -63,7 +74,7 @@ export async function dashboard(el, { query, ctx }) {
     </div>
     <div class="angkat">${d.slots.length ? tabSlot(d.slots, d.slot_id) : (d.libur ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span><span class="kecil muted">${d.libur.jenis === 'semester' ? 'Libur semester' : 'Libur harian'} · tidak ada sesi dan tidak ada alpa.</span></div>` : '<div class="kartu bayang"><span class="muted">Tidak ada sesi di tanggal ini.</span></div>')}</div>
     <div class="isi">
-      ${subNav('dashboard')}
+      ${o.subnav()}
       ${d.data?.raya ? `<div class="info info-oranye">${ikon.info()}<span><b>${esc(d.libur?.alasan ?? 'Hari Raya')}</b> · semua pembina dan asisten absen kedatangan satu kali (${fmtJam(slot.scan_mulai)}–${fmtJam(slot.scan_selesai)}).</span></div>` : ''}
       ${r ? `<div class="stat-grid ${d.data?.raya ? 'dua' : 'tiga'}">${stat.map(([l, n, ket]) => `<div class="stat"><b>${n}</b><span style="color:var(--utama)">${l}</span>${ket ? `<small class="muted">${ket}</small>` : ''}</div>`).join('')}</div>` : ''}
       ${d.data ? `<h2 class="judul-seksi">Status per kelas</h2>
@@ -72,7 +83,7 @@ export async function dashboard(el, { query, ctx }) {
           const hadir = perlu.filter((a) => a.status === 'hadir' || a.status === 'terlambat').length;
           const lengkap = perlu.length && hadir === perlu.length;
           return `<div class="kartu rapat">
-            <div class="baris-antara"><span style="font-size:15px;font-weight:800">${esc(k.nama)}</span>
+            <div class="baris-antara"><span style="font-size:15px;font-weight:800">${esc(k.nama)}${k.jumlah_murid !== undefined ? ` <span class="kecil muted" style="font-weight:600">· ${k.jumlah_murid} murid</span>` : ''}</span>
               <span class="kecil tebal" style="color:${lengkap ? 'var(--hijau-teks)' : 'var(--oranye)'}">${lengkap ? 'Lengkap' : `${hadir}/${perlu.length} hadir`}</span></div>
             ${k.catatan.map((c) => `<span class="info info-ungu" style="padding:5px 10px">${esc(c)}</span>`).join('')}
             ${detailMurid(k)}
@@ -84,7 +95,7 @@ export async function dashboard(el, { query, ctx }) {
         }).join('') || '<div class="kosong">Belum ada pengajar terjadwal di slot ini.</div>'}` : ''}
     </div>`;
 
-  const ke = (o) => ctx.pergi(`/admin?${qs({ slot: d.slot_id, ...o })}`);
+  const ke = (x) => ctx.pergi(`${o.base}?${qs({ slot: d.slot_id, ...x })}`);
   el.addEventListener('click', async (e) => {
     const s = e.target.closest('[data-slot]');
     if (s) return ke({ slot: s.dataset.slot });

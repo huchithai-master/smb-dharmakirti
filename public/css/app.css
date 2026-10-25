@@ -540,3 +540,11 @@ input.input[type="date"]:not(:focus):placeholder-shown::-webkit-datetime-edit { 
 .pilih-kelas[aria-pressed='true'] { border-color: var(--utama); background: var(--utama-pilih); }
 .pilih-kelas[aria-pressed='true'] .kotak { background: var(--utama); border-color: var(--utama); }
 .pilih-kelas[aria-pressed='true'] .kotak::after { content: '✓'; color: #fff; font-size: 13px; line-height: 1; }
+
+/* Absensi siswa: pencarian dan penanda yang belum diabsen */
+.cari-murid .input { width: 100%; }
+.baris-murid { padding: 8px 10px; margin: 0 -10px; border-radius: 12px; border-left: 4px solid transparent; }
+.baris-murid[hidden] { display: none; }
+.baris-murid.belum { background: var(--oranye-bg); border-left-color: var(--oranye); }
+.belum-tag { display: none; margin-left: auto; font-size: 11px; font-weight: 800; color: var(--oranye); }
+.baris-murid.belum .belum-tag { display: inline; }
