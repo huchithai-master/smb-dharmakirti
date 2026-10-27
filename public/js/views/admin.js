@@ -23,6 +23,11 @@ export const dashboard = (el, a) => tampilDashboard(el, a, {
   atas: `<a class="btn-ikon-terang" href="#/petugas" aria-label="Buka layar Petugas QR">${ikon.qr()}</a>`,
 });
 
+// Dashboard Kepala SMB: semua kelas dan semua sesi hari itu, bisa melihat hari sebelumnya.
+export const dashboardKepala = (el, a) => tampilDashboard(el, a, {
+  api: '/api/kepala/dashboard', base: '/kepala/dashboard', lencana: 'Kepala SMB', subnav: () => subNavKepala('dashboard', false), atas: '', tanggal: true,
+});
+
 // Dashboard Wakil Kurikulum: tampilan sama dengan admin, hanya kelas di jenjangnya.
 export const dashboardWakil = (el, a) => tampilDashboard(el, a, {
   api: '/api/wakil/dashboard', base: '/wakil/dashboard', lencana: 'Wakil Kurikulum', subnav: () => subNavKepala('dashboard', true), atas: '', tanggal: true,
@@ -100,7 +105,7 @@ async function tampilDashboard(el, { query, ctx }, o) {
           <h1>${d.tanggal === d.hari_ini ? 'Kehadiran Hari Ini' : 'Kehadiran'}</h1></div>
       </div>
     </div>
-    <div class="angkat">${d.bagian ? (d.bagian.length ? '' : '<div class="kartu bayang"><span class="muted">Tidak ada sesi untuk kelas Anda di tanggal ini.</span></div>') + `<div style="margin-top:${d.bagian.length ? '0' : '12px'}">${o.subnav()}</div>` : d.slots.length ? tabSlot(d.slots, d.slot_id) : (d.libur ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span><span class="kecil muted">${d.libur.jenis === 'semester' ? 'Libur semester' : 'Libur harian'} · tidak ada sesi dan tidak ada alpa.</span></div>` : '<div class="kartu bayang"><span class="muted">Tidak ada sesi di tanggal ini.</span></div>')}</div>
+    <div class="angkat">${d.bagian ? (d.bagian.length ? '' : '<div class="kartu bayang"><span class="muted">Tidak ada sesi di tanggal ini.</span></div>') + `<div style="margin-top:${d.bagian.length ? '0' : '12px'}">${o.subnav()}</div>` : d.slots.length ? tabSlot(d.slots, d.slot_id) : (d.libur ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span><span class="kecil muted">${d.libur.jenis === 'semester' ? 'Libur semester' : 'Libur harian'} · tidak ada sesi dan tidak ada alpa.</span></div>` : '<div class="kartu bayang"><span class="muted">Tidak ada sesi di tanggal ini.</span></div>')}</div>
     <div class="isi">
       ${d.bagian ? barTanggal : o.subnav()}
       ${d.libur && d.bagian ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span></div>` : ''}

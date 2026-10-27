@@ -7,7 +7,7 @@ const qs = (o) => new URLSearchParams(Object.entries(o).filter(([, v]) => v !== 
 // Sub-menu Kepala SMB: Beranda (izin & penggantian), Atur Tugas, Lainnya (honor & rekap).
 export function subNavKepala(aktif, wakil = false) {
   const dasar = wakil ? '#/wakil' : '#/kepala';
-  const item = [['beranda', dasar, 'Beranda'], ...(wakil ? [['dashboard', '#/wakil/dashboard', 'Dashboard']] : []), ['tugas', dasar + '/tugas', 'Atur Tugas'], ...(wakil ? [] : [['lainnya', '#/kepala/lainnya', 'Lainnya']])];
+  const item = [['beranda', dasar, 'Beranda'], ['dashboard', dasar + '/dashboard', 'Dashboard'], ['tugas', dasar + '/tugas', 'Atur Tugas'], ...(wakil ? [] : [['lainnya', '#/kepala/lainnya', 'Lainnya']])];
   return `<nav class="seg tab-abu" aria-label="Menu Kepala SMB">${item
     .map(([k, href, label]) => `<a href="${href}" class="btn btn-kecil" style="min-height:40px;${k === aktif ? 'background:#fff;color:var(--utama);box-shadow:0 1px 3px rgba(17,24,39,.12)' : 'background:transparent;color:var(--abu)'}" ${k === aktif ? 'aria-current="page"' : ''}>${label}</a>`)
     .join('')}</nav>`;
