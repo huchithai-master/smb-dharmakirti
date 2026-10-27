@@ -89,10 +89,16 @@ function blokSlot(data, slot, libur) {
 async function tampilDashboard(el, { query, ctx }, o) {
   const d = await api(`${o.api}?${qs({ slot_id: query.slot, tanggal: o.tanggal ? query.tanggal : null })}`);
   const geserHari = (n) => { const t = new Date(d.tanggal + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
-  const barTanggal = !o.tanggal ? '' : `<div class="bar-tanggal"><button type="button" class="btn-kembali" data-hari="-1" aria-label="Hari sebelumnya">${ikon.kiri()}</button>
-    <input class="input" type="date" id="tgl-dash" value="${d.tanggal}" max="${d.hari_ini}" aria-label="Pilih tanggal">
-    <button type="button" class="btn-kembali" data-hari="1" aria-label="Hari berikutnya" ${d.tanggal >= d.hari_ini ? 'disabled' : ''}>${ikon.kanan()}</button>
-    ${d.tanggal === d.hari_ini ? '' : '<button type="button" class="btn btn-kecil btn-netral" style="width:auto" data-hari="hari-ini">Hari ini</button>'}</div>`;
+  const hariIni = d.tanggal === d.hari_ini;
+  const barTanggal = !o.tanggal ? '' : `<div class="bar-tanggal">
+    <button type="button" class="geser" data-hari="-1" aria-label="Hari sebelumnya">${ikon.kiri()}</button>
+    <label class="pilih-tanggal">
+      <span class="tumpuk"><span class="kecil muted">${hariIni ? 'Hari ini' : 'Melihat tanggal'}</span><span class="tebal">${esc(fmtTanggal(d.tanggal))}</span></span>
+      <span class="ikon-kal">${ikon.kalender ? ikon.kalender() : ''}</span>
+      <input type="date" id="tgl-dash" value="${d.tanggal}" max="${d.hari_ini}" aria-label="Pilih tanggal">
+    </label>
+    <button type="button" class="geser" data-hari="1" aria-label="Hari berikutnya" ${hariIni ? 'disabled' : ''}>${ikon.kanan()}</button>
+  </div>${hariIni ? '' : '<button type="button" class="btn btn-kecil btn-netral kembali-hari-ini" data-hari="hari-ini">Kembali ke hari ini</button>'}`;
   const slot = d.slots?.find((s) => s.id === d.slot_id);
   el.innerHTML = `
     <div class="hdr" style="padding-bottom:60px">
@@ -124,6 +130,7 @@ async function tampilDashboard(el, { query, ctx }, o) {
       return ctx.pergi(`${o.base}?${qs({ tanggal: v === 'hari-ini' ? null : geserHari(Number(v)) })}`);
     }
   });
+  el.querySelector('#tgl-dash')?.addEventListener('click', (e) => { try { e.target.showPicker?.(); } catch { /* browser lama: abaikan */ } });
   el.querySelector('#tgl-dash')?.addEventListener('change', (e) => e.target.value && ctx.pergi(`${o.base}?${qs({ tanggal: e.target.value === d.hari_ini ? null : e.target.value })}`));
 
   // Pengajuan baru muncul sendiri: cek tiap 5 detik, dan segera saat aplikasi dibuka kembali.
