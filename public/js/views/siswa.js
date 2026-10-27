@@ -385,7 +385,7 @@ export async function formMuridPembina(el, { params, ctx }) {
         <button class="btn btn-netral" type="button" id="arsip">${m.aktif ? 'Arsipkan murid' : 'Aktifkan kembali'}</button>
         <span class="kecil muted">${m.aktif ? 'Murid yang sudah tidak ikut dipindah ke arsip. Riwayat absensi tetap tersimpan dan bisa diaktifkan lagi nanti.' : 'Murid ini ada di arsip dan tidak muncul di absensi.'}</span>
         <button class="btn btn-bahaya" type="button" id="hapus">Hapus permanen</button>
-        <span class="kecil muted">Hanya bisa bila murid belum pernah punya riwayat absensi (mis. salah input). Kalau sudah, gunakan arsip.</span>
+        <span class="kecil muted">Menghapus murid juga menghapus seluruh riwayat absensinya. Untuk menyimpan riwayat, gunakan arsip.</span>
       </section>`}
       <div class="bar-bawah" style="margin:0 -16px"><button class="btn btn-utama" type="submit" id="simpan">Simpan</button></div>
     </form>`;

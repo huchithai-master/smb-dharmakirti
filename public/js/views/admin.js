@@ -25,7 +25,7 @@ export const dashboard = (el, a) => tampilDashboard(el, a, {
 
 // Dashboard Wakil Kurikulum: tampilan sama dengan admin, hanya kelas di jenjangnya.
 export const dashboardWakil = (el, a) => tampilDashboard(el, a, {
-  api: '/api/wakil/dashboard', base: '/wakil/dashboard', lencana: 'Wakil Kurikulum', subnav: () => subNavKepala('dashboard', true), atas: '',
+  api: '/api/wakil/dashboard', base: '/wakil/dashboard', lencana: 'Wakil Kurikulum', subnav: () => subNavKepala('dashboard', true), atas: '', tanggal: true,
 });
 
 function blokSlot(data, slot, libur) {
@@ -82,7 +82,12 @@ function blokSlot(data, slot, libur) {
 }
 
 async function tampilDashboard(el, { query, ctx }, o) {
-  const d = await api(`${o.api}?${qs({ slot_id: query.slot })}`);
+  const d = await api(`${o.api}?${qs({ slot_id: query.slot, tanggal: o.tanggal ? query.tanggal : null })}`);
+  const geserHari = (n) => { const t = new Date(d.tanggal + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); };
+  const barTanggal = !o.tanggal ? '' : `<div class="bar-tanggal"><button type="button" class="btn-kembali" data-hari="-1" aria-label="Hari sebelumnya">${ikon.kiri()}</button>
+    <input class="input" type="date" id="tgl-dash" value="${d.tanggal}" max="${d.hari_ini}" aria-label="Pilih tanggal">
+    <button type="button" class="btn-kembali" data-hari="1" aria-label="Hari berikutnya" ${d.tanggal >= d.hari_ini ? 'disabled' : ''}>${ikon.kanan()}</button>
+    ${d.tanggal === d.hari_ini ? '' : '<button type="button" class="btn btn-kecil btn-netral" style="width:auto" data-hari="hari-ini">Hari ini</button>'}</div>`;
   const slot = d.slots?.find((s) => s.id === d.slot_id);
   el.innerHTML = `
     <div class="hdr" style="padding-bottom:60px">
@@ -97,7 +102,7 @@ async function tampilDashboard(el, { query, ctx }, o) {
     </div>
     <div class="angkat">${d.bagian ? (d.bagian.length ? '' : '<div class="kartu bayang"><span class="muted">Tidak ada sesi untuk kelas Anda di tanggal ini.</span></div>') + `<div style="margin-top:${d.bagian.length ? '0' : '12px'}">${o.subnav()}</div>` : d.slots.length ? tabSlot(d.slots, d.slot_id) : (d.libur ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span><span class="kecil muted">${d.libur.jenis === 'semester' ? 'Libur semester' : 'Libur harian'} · tidak ada sesi dan tidak ada alpa.</span></div>` : '<div class="kartu bayang"><span class="muted">Tidak ada sesi di tanggal ini.</span></div>')}</div>
     <div class="isi">
-      ${d.bagian ? '' : o.subnav()}
+      ${d.bagian ? barTanggal : o.subnav()}
       ${d.libur && d.bagian ? `<div class="kartu bayang" style="border-color:var(--oranye-garis)"><span class="tebal" style="color:var(--oranye)">Libur: ${esc(d.libur.alasan)}</span></div>` : ''}
       ${d.bagian
         ? d.bagian.map((b) => `<h2 class="judul-seksi" style="margin-top:8px">Slot ${esc(b.slot.nama)} · ${b.slot.mode === 'konfirmasi' ? 'Konfirmasi ' + fmtJam(b.slot.scan_mulai) : 'Absen masuk ' + fmtJam(b.slot.jam_mulai)}</h2>${blokSlot(b.data, b.slot, d.libur)}`).join('')
@@ -108,7 +113,13 @@ async function tampilDashboard(el, { query, ctx }, o) {
   el.addEventListener('click', async (e) => {
     const s = e.target.closest('[data-slot]');
     if (s) return ke({ slot: s.dataset.slot });
+    const h = e.target.closest('[data-hari]');
+    if (h && !h.disabled) {
+      const v = h.dataset.hari;
+      return ctx.pergi(`${o.base}?${qs({ tanggal: v === 'hari-ini' ? null : geserHari(Number(v)) })}`);
+    }
   });
+  el.querySelector('#tgl-dash')?.addEventListener('change', (e) => e.target.value && ctx.pergi(`${o.base}?${qs({ tanggal: e.target.value === d.hari_ini ? null : e.target.value })}`));
 
   // Pengajuan baru muncul sendiri: cek tiap 5 detik, dan segera saat aplikasi dibuka kembali.
   const segarkan = () => document.visibilityState === 'visible' && !el.querySelector(':focus') && ctx.muatUlangDiam();

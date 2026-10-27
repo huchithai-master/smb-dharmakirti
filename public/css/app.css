@@ -548,3 +548,8 @@ input.input[type="date"]:not(:focus):placeholder-shown::-webkit-datetime-edit { 
 .baris-murid.belum { background: var(--oranye-bg); border-left-color: var(--oranye); }
 .belum-tag { display: none; margin-left: auto; font-size: 11px; font-weight: 800; color: var(--oranye); }
 .baris-murid.belum .belum-tag { display: inline; }
+
+/* Dashboard Wakil: pilih tanggal */
+.bar-tanggal { display: flex; align-items: center; gap: 8px; }
+.bar-tanggal .input { flex: 1; min-width: 0; }
+.bar-tanggal .btn-kembali[disabled] { opacity: .35; }

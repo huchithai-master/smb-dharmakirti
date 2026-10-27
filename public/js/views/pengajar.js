@@ -126,7 +126,7 @@ export async function beranda(el, { ctx }) {
       </div>
     </div>
     <div class="isi">
-      <h2 class="judul-seksi">Jadwal Mengajar Hari Ini <a href="#/riwayat">Lihat riwayat</a></h2>
+      <h2 class="judul-seksi">Jadwal Mengajar Hari Ini</h2>
       ${bannerRaya}
       ${sesiHariIni}
       ${berikut}
@@ -147,63 +147,6 @@ export async function beranda(el, { ctx }) {
   // Status "Absensi sedang dilakukan" milik rekan setim ikut berubah tanpa refresh.
   const segar = setInterval(() => document.visibilityState === 'visible' && ctx.muatUlangDiam(), 8000);
   return () => clearInterval(segar);
-}
-
-export async function riwayat(el, { query }) {
-  const d = await api(`/api/riwayat${query.bulan ? '?bulan=' + encodeURIComponent(query.bulan) : ''}`);
-  const [y, m] = d.bulan.split('-').map(Number);
-  const geser = (n) => {
-    const t = new Date(y, m - 1 + n, 1);
-    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`;
-  };
-  let filter = 'semua';
-
-  el.innerHTML = `
-    <div class="hdr-putih">
-      <div class="baris" style="justify-content:space-between">
-        <h1>Riwayat</h1>
-        <div style="display:flex;align-items:center;white-space:nowrap">
-          <a class="btn-kembali" href="#/riwayat?bulan=${geser(-1)}" aria-label="Bulan sebelumnya">${ikon.kiri()}</a>
-          <span class="tebal sedang">${esc(fmtBulan(d.bulan))}</span>
-          <a class="btn-kembali" href="#/riwayat?bulan=${geser(1)}" aria-label="Bulan berikutnya">${ikon.kanan()}</a>
-        </div>
-      </div>
-      <div class="chips" id="filter" style="padding:0 4px">
-        ${['semua', 'hadir', 'terlambat', 'izin', 'alpa']
-          .map((f) => `<button data-f="${f}" aria-pressed="${f === 'semua'}">${f === 'semua' ? 'Semua' : f[0].toUpperCase() + f.slice(1)} (${f === 'semua' ? d.baris.filter((b) => b.status in d.ringkasan).length : d.ringkasan[f]})</button>`)
-          .join('')}
-      </div>
-    </div>
-    <div class="isi" id="daftar"></div>`;
-
-  const daftar = el.querySelector('#daftar');
-  const tampil = () => {
-    // Sesi yang belum selesai (belum dibuka / belum scan) tidak masuk riwayat.
-    const rows = d.baris.filter((b) => (filter === 'semua' ? b.status in d.ringkasan : b.status === filter));
-    daftar.innerHTML = rows.length
-      ? rows
-          .map(
-            (b) => `
-        <div class="item-link">
-          <div class="tanggal-kotak"><b>${Number(b.tanggal.slice(8))}</b><span>${bulanSingkat(b.tanggal)}</span></div>
-          <div class="tumpuk">
-            <span class="tebal">${esc(b.kelas_nama)} · ${peranLabel(b.peran)}${b.jenis === 'pengganti' ? ' Pengganti' : ''}</span>
-            <span class="kecil muted">${esc(b.slot_nama)}${b.jam ? (b.mode === 'konfirmasi' ? ' · dikonfirmasi ' : ' · scan ') + fmtJam(b.jam) : ''}${b.jam_pulang ? ' · pulang ' + fmtJam(b.jam_pulang) : ''}${b.keterangan ? ' · ' + esc(b.keterangan) : ''}</span>
-          </div>
-          ${chip(b.status)}
-        </div>`,
-          )
-          .join('')
-      : `<div class="kosong">Belum ada data untuk filter ini.</div>`;
-  };
-  tampil();
-  el.querySelector('#filter').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-f]');
-    if (!b) return;
-    filter = b.dataset.f;
-    for (const x of el.querySelectorAll('#filter button')) x.setAttribute('aria-pressed', String(x === b));
-    tampil();
-  });
 }
 
 export async function izin(el) {

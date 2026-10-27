@@ -89,7 +89,7 @@ export async function scan(el) {
            <div><span>Jam scan</span><span>${fmtJam(a.jam)}</span></div>
            <div><span>Status</span><span><span class="chip chip-${a.status}">${esc(label)}</span></span></div>
          </div>`,
-        `<a class="btn btn-utama" href="#/">Kembali ke Beranda</a><a class="btn btn-garis" href="#/riwayat">Lihat Riwayat</a>`,
+        `<a class="btn btn-utama" href="#/">Kembali ke Beranda</a>`,
       );
     } catch (e) {
       layarHasil(
