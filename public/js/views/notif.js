@@ -45,7 +45,7 @@ export async function matikanPush() {
   }
 }
 
-export async function notifikasi(el) {
+export async function notifikasi(el, { ctx }) {
   const d = await api('/api/notif');
   let aktifDiPerangkat = false;
   if (dukungPush() && Notification.permission === 'granted') {
@@ -77,8 +77,9 @@ export async function notifikasi(el) {
         </div>
       </div>`;
     el.innerHTML = `
-      <div class="hdr-putih"><div class="baris" style="justify-content:space-between">
-        <h1>Notifikasi</h1>
+      <div class="hdr-putih"><div class="baris">
+        <button type="button" class="btn-kembali" id="kembali" aria-label="Kembali">${ikon.kembali()}</button>
+        <h1 style="flex:1">Notifikasi</h1>
         ${baru.length ? '<button class="btn-teks" id="semua-baca" style="margin-right:8px">Tandai semua dibaca</button>' : ''}
       </div></div>
       <div class="isi">
@@ -87,6 +88,7 @@ export async function notifikasi(el) {
         ${lama.length ? `<span class="label-kecil">Sebelumnya</span>${lama.map(baris).join('')}` : ''}
         ${d.daftar.length ? '' : '<div class="kartu"><div class="kosong" style="padding:16px">Belum ada notifikasi.</div></div>'}
       </div>`;
+    el.querySelector('#kembali').addEventListener('click', () => ctx.pergi('/'));
     el.querySelector('#semua-baca')?.addEventListener('click', async () => {
       await api('/api/notif/baca', { method: 'POST', body: {} });
       d.daftar.forEach((n) => (n.dibaca = 1));
