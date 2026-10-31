@@ -149,6 +149,32 @@ export async function beranda(el, { ctx }) {
   return () => clearInterval(segar);
 }
 
+export async function riwayat(el) {
+  const d = await api('/api/riwayat/sesi');
+  const daftar = (a) => (a.length ? esc(a.join(', ')) : '<span class="muted">–</span>');
+  const tgl = [...new Set(d.sesi.map((s) => s.tanggal))];
+  el.innerHTML = `
+    <div class="hdr-putih"><div class="baris"><div class="tumpuk" style="padding-left:8px">
+      <h1 style="padding-left:0">Riwayat</h1>
+      <span class="kecil muted">Sesi kelas Anda · ${esc(fmtBulan(d.bulan))}</span>
+    </div></div></div>
+    <div class="isi">
+      ${tgl.length ? tgl.map((t) => `
+        <h2 class="judul-seksi">${esc(fmtTanggal(t))}</h2>
+        ${d.sesi.filter((s) => s.tanggal === t).map((s) => `
+          <div class="kartu">
+            <div class="baris-antara"><span class="kecil tebal muted">${esc(s.slot_nama.toUpperCase())}</span><span class="chip chip-hadir">${s.siswa.length} siswa hadir</span></div>
+            <div class="tebal" style="font-size:17px">Kelas ${esc(s.kelas_nama)}</div>
+            <div class="kecil"><span class="muted">Pembina:</span> ${daftar(s.pembina)}</div>
+            <div class="kecil"><span class="muted">Asisten:</span> ${daftar(s.asisten)}</div>
+            <div class="kecil"><span class="muted">Materi:</span> ${s.materi ? esc(s.materi) : '<span class="muted">belum diisi</span>'}</div>
+            ${s.siswa.length ? `<details><summary class="kecil tebal" style="cursor:pointer;min-height:36px;display:flex;align-items:center">Lihat siswa yang hadir</summary>
+              <div class="kecil" style="line-height:1.7">${esc(s.siswa.join(', '))}</div></details>` : ''}
+          </div>`).join('')}`).join('')
+        : '<div class="kartu"><div class="kosong" style="padding:16px">Belum ada sesi bulan ini.</div></div>'}
+    </div>`;
+}
+
 export async function izin(el) {
   const d = await api('/api/izin');
   let jenis = 'izin';

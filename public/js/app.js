@@ -37,6 +37,7 @@ const RUTE = [
   { path: '/murid/impor', view: impor.imporMurid, perlu: 'bisa_murid', nav: 'murid' },
   { path: '/murid/:id', view: siswa.formMuridPembina, perlu: 'bisa_murid', nav: 'murid' },
   { path: '/izin', view: pengajar.izin, perlu: 'is_pengajar', nav: 'izin' },
+  { path: '/riwayat', view: pengajar.riwayat, perlu: 'is_pengajar', nav: 'riwayat' },
   { path: '/akun', view: pengajar.akun, perlu: 'login', nav: 'akun' },
   { path: '/petugas', view: petugas.petugas, perlu: 'is_petugas', nav: 'petugas' },
   { path: '/admin', view: admin.dashboard, perlu: 'is_admin', nav: 'admin' },
@@ -104,6 +105,7 @@ function navBawah(aktif) {
     item.push(['beranda', '#/', ikon.rumah(), 'Beranda']);
     // Data Murid pembina: pembina kedua/cadangan hanya melihatnya saat bertugas; Kepala SMB lewat Kepala SMB > Lainnya.
     if (m.bisa_murid) item.push(['murid', '#/murid', ikon.orang2(), 'Data Murid']);
+    item.push(['riwayat', '#/riwayat', ikon.jam(), 'Riwayat']);
     item.push(['izin', '#/izin', ikon.dokumen(), 'Izin']);
   }
   if (m.is_petugas) item.push(['petugas', '#/petugas', ikon.qr(), 'Petugas QR']);
