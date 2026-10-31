@@ -21,13 +21,13 @@ function infoSesi(s) {
 // Daftar tim kelas: pembina dulu, lalu asisten, dengan nama sendiri ditandai "Anda".
 function daftarTim(s, namaSaya) {
   const anggota = [
-    { nama: namaSaya, peran: s.peran, saya: true, ket: s.jenis === 'pengganti' ? 'pengganti' : s.jenis === 'tambahan' ? 'pembina kedua' : '' },
-    ...s.rekan.map((r) => ({ nama: r.nama, peran: r.peran, saya: false, ket: '' })),
+    { nama: namaSaya, peran: s.peran, saya: true, ket: s.jenis === 'pengganti' ? 'pengganti' : s.jenis === 'tambahan' ? 'pembina kedua' : '', izin: s.izin_jenis },
+    ...s.rekan.map((r) => ({ nama: r.nama, peran: r.peran, saya: false, ket: '', izin: r.izin_jenis })),
   ];
   const grup = (peran, judul) => {
     const isi = anggota.filter((a) => a.peran === peran).sort((a, b) => Number(b.saya) - Number(a.saya));
     return `<div class="tim-grup"><span class="tim-judul">${judul}</span>${isi.length
-      ? isi.map((a) => `<span class="tim-nama${a.saya ? ' saya' : ''}">${esc(a.nama)}${a.saya ? ' <em>Anda</em>' : ''}${a.ket ? ` <small>(${a.ket})</small>` : ''}</span>`).join('')
+      ? isi.map((a) => `<span class="tim-nama${a.saya ? ' saya' : ''}">${esc(a.nama)}${a.saya ? ' <em>Anda</em>' : ''}${a.ket ? ` <small>(${a.ket})</small>` : ''}${a.izin ? ` <span class="lencana-izin ${a.izin}">${JENIS_IZIN[a.izin] ?? 'Izin'}</span>` : ''}</span>`).join('')
       : '<span class="tim-nama kosong">Belum ada</span>'}</div>`;
   };
   return `<div class="tim">${grup('guru', 'Pembina')}${grup('asisten', 'Asisten')}</div>`;
@@ -45,7 +45,7 @@ function kartuSesi(s, bisaScan, namaSaya) {
       else if (bisaScan) aksi += `<div class="info info-abu">${ikon.info()}<span>Absen pulang sudah ditutup.</span></div>`;
     }
   } else if (s.status === 'izin') {
-    aksi = `<div class="info info-ungu">${ikon.info()}<span>Izin Anda untuk sesi ini sudah disetujui.</span></div>`;
+    aksi = `<div class="info info-ungu">${ikon.info()}<span>${s.izin_jenis === 'sakit' ? 'Sakit' : s.izin_jenis === 'tugas' ? 'Tugas lain' : 'Izin'} Anda untuk sesi ini sudah disetujui.</span></div>`;
   } else if (s.status === 'alpa') {
     aksi = `<div class="info info-merah">${ikon.info()}<span>Sesi sudah ditutup tanpa scan.</span></div>`;
   } else if (bisaScan && s.status_slot === 'buka') {
@@ -73,7 +73,7 @@ function kartuSesi(s, bisaScan, namaSaya) {
           <span class="slot-label ${s.status_slot === 'buka' ? '' : 'abu'}">${s.raya ? `${esc(s.slot_nama)} · Absen Kedatangan · ${fmtJam(s.scan_mulai)}` : `Slot ${esc(s.slot_nama)} · ${fmtJam(s.jam_mulai)}–${fmtJam(s.jam_selesai)}`}</span>
           <span class="nama-kelas">${s.raya ? 'Semua pembina &amp; asisten' : `Kelas ${esc(s.kelas_nama)}`}</span>
         </div>
-        ${chip(s.status)}
+        ${s.status === 'izin' ? `<span class="chip chip-izin">${JENIS_IZIN[s.izin_jenis] ?? 'Izin'}</span>` : chip(s.status)}
       </div>
       ${s.gabung ? `<div class="info info-utama">${ikon.info()}<span><b>Kelas digabung:</b> ${esc(s.gabung.nama)} · ${s.gabung.jumlah_murid} murid. Diajar tim kelas induk, absensi siswa diisi sekali.</span></div>` : ''}
       ${s.raya ? '' : daftarTim(s, namaSaya)}
