@@ -310,7 +310,10 @@ input.input[type="date"]:not(:focus):placeholder-shown::-webkit-datetime-edit { 
 .tim { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .tim-grup { background: var(--abu-bg); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .tim-judul { font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-.tim-nama { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.tim-nama { font-size: 14px; font-weight: 600; overflow-wrap: break-word; display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+.tim-nama .nm { min-width: 0; overflow-wrap: anywhere; }
+.tim-nama .lencana-izin { flex: none; white-space: nowrap; margin-left: 0; }
+.tim-nama em, .tim-nama small { flex: none; white-space: nowrap; }
 .tim-nama.saya { font-weight: 800; color: var(--utama); }
 .tim-nama em { font-style: normal; font-size: 10.5px; font-weight: 800; background: var(--utama); color: #fff; padding: 1px 7px; border-radius: 999px; vertical-align: 1px; }
 .tim-nama small { font-size: 12px; font-weight: 600; color: var(--muted); }

@@ -27,7 +27,7 @@ function daftarTim(s, namaSaya) {
   const grup = (peran, judul) => {
     const isi = anggota.filter((a) => a.peran === peran).sort((a, b) => Number(b.saya) - Number(a.saya));
     return `<div class="tim-grup"><span class="tim-judul">${judul}</span>${isi.length
-      ? isi.map((a) => `<span class="tim-nama${a.saya ? ' saya' : ''}">${esc(a.nama)}${a.saya ? ' <em>Anda</em>' : ''}${a.ket ? ` <small>(${a.ket})</small>` : ''}${a.izin ? ` <span class="lencana-izin ${a.izin}">${JENIS_IZIN[a.izin] ?? 'Izin'}</span>` : ''}</span>`).join('')
+      ? isi.map((a) => `<span class="tim-nama${a.saya ? ' saya' : ''}"><span class="nm">${esc(a.nama)}</span>${a.saya ? ' <em>Anda</em>' : ''}${a.ket ? ` <small>(${a.ket})</small>` : ''}${a.izin ? ` <span class="lencana-izin ${a.izin}">${JENIS_IZIN[a.izin] ?? 'Izin'}</span>` : ''}</span>`).join('')
       : '<span class="tim-nama kosong">Belum ada</span>'}</div>`;
   };
   return `<div class="tim">${grup('guru', 'Pembina')}${grup('asisten', 'Asisten')}</div>`;
