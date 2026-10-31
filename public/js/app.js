@@ -1,5 +1,5 @@
 import { api } from './api.js';
-import { esc, ikon, fmtTanggal, fmtJam, toast } from './ui.js';
+import { esc, ikon, fmtTanggal, fmtJam, toast, labelPeran } from './ui.js';
 import * as auth from './views/auth.js';
 import * as pengajar from './views/pengajar.js';
 import * as scan from './views/scan.js';
@@ -79,6 +79,7 @@ export function rumah() {
   if (!m) return '/login';
   if (m.is_pengajar) return '/';
   if (m.is_kepala) return '/kepala';
+  if (m.is_wakil) return '/wakil';
   if (m.is_admin) return '/admin';
   if (m.is_petugas) return '/petugas';
   return '/akun';
@@ -109,7 +110,10 @@ function navBawah(aktif) {
   if (m.is_kepala) item.push(['kepala', '#/kepala', ikon.dokumen(), 'Kepala SMB']);
   if (m.is_wakil) item.push(['wakil', '#/wakil', ikon.dokumen(), 'Wakil']);
   if (m.is_admin) item.push(['admin', '#/admin', ikon.grafik(), 'Admin']);
-  item.push(['akun', '#/akun', ikon.orang(), 'Akun']);
+  // Tab Akun hanya untuk Admin; yang lain keluar lewat tombol akun di pojok kanan atas Beranda.
+  if (m.is_admin) item.push(['akun', '#/akun', ikon.orang(), 'Akun']);
+  // Satu tab saja tidak perlu bar bawah.
+  if (item.length <= 1) return '';
   return `<nav class="nav-bawah" aria-label="Menu utama">${item
     .map(([k, href, ik, label]) => `<a href="${href}" ${k === aktif ? 'aria-current="page"' : ''}>${ik}${label}</a>`)
     .join('')}</nav>`;
@@ -188,6 +192,45 @@ async function render(opsi) {
     }
   }
 }
+
+// ---- Menu akun (pojok kanan atas): nama, peran, dan Keluar ----
+function tutupMenuAkun() {
+  document.getElementById('menu-akun')?.remove();
+  document.querySelectorAll('[data-akun][aria-expanded="true"]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+}
+function bukaMenuAkun(tombol) {
+  const m = ctx.me;
+  if (!m) return;
+  tutupMenuAkun();
+  const r = tombol.getBoundingClientRect();
+  const menu = document.createElement('div');
+  menu.id = 'menu-akun';
+  menu.className = 'menu-akun';
+  menu.setAttribute('role', 'menu');
+  menu.style.top = `${Math.round(r.bottom + 8)}px`;
+  menu.innerHTML = `
+    <div class="menu-akun-id"><b>${esc(m.nama)}</b><small>${esc([labelPeran(m), m.hp].filter(Boolean).join(' · '))}</small></div>
+    <button type="button" role="menuitem" class="menu-akun-keluar" id="keluar-menu">${ikon.keluar(18)} Keluar</button>`;
+  document.body.appendChild(menu);
+  tombol.setAttribute('aria-expanded', 'true');
+  menu.querySelector('#keluar-menu').addEventListener('click', async () => {
+    tutupMenuAkun();
+    await api('/api/logout', { method: 'POST' }).catch(() => {});
+    ctx.me = null;
+    location.hash = '/login';
+  });
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest?.('[data-akun]');
+  if (t) {
+    if (document.getElementById('menu-akun')) tutupMenuAkun(); else bukaMenuAkun(t);
+    return;
+  }
+  if (!e.target.closest?.('#menu-akun')) tutupMenuAkun();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') tutupMenuAkun(); });
+window.addEventListener('hashchange', tutupMenuAkun);
+window.addEventListener('scroll', tutupMenuAkun, { passive: true });
 
 // ---- Keluar otomatis bila tidak dipakai atau ditinggalkan (aplikasi dialihkan) selama 10 menit ----
 const BATAS_DIAM_MS = 10 * 60 * 1000;

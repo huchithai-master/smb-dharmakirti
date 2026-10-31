@@ -118,3 +118,16 @@ export function pasangPilihan(wadah, onUbah) {
     onUbah?.(b.dataset.nilai);
   });
 }
+
+// Tombol akun di pojok kanan atas; menunya (nama, peran, Keluar) dibuka oleh app.js.
+export const tombolAkun = () =>
+  `<button type="button" class="btn-ikon-terang" data-akun aria-label="Akun saya" aria-haspopup="menu" aria-expanded="false">${ikon.orang()}</button>`;
+
+export function labelPeran(me) {
+  const bagian = [];
+  if (me.is_pengajar && me.level) bagian.push(`${peranLabel(me.level)}${me.tipe === 'cadangan' ? ' (cadangan)' : ''}`);
+  if (me.jabatan && JABATAN[me.jabatan]) bagian.push(JABATAN[me.jabatan]);
+  if (me.is_petugas) bagian.push('Petugas QR');
+  if (me.is_admin) bagian.push('Admin');
+  return bagian.join(' · ');
+}

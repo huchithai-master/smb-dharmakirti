@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { esc, ikon, fmtJam, fmtTanggal, peranLabel, muatSkrip, warnaStatus } from '../ui.js';
+import { esc, ikon, tombolAkun, fmtJam, fmtTanggal, peranLabel, muatSkrip, warnaStatus } from '../ui.js';
 
 const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const dariB64url = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
@@ -15,7 +15,7 @@ export async function petugas(el, { ctx, query }) {
 
   if (!sesi.slots.length) {
     el.innerHTML = `
-      <div class="hdr-putih"><div class="baris"><h1>Petugas QR</h1></div></div>
+      <div class="hdr-putih"><div class="baris" style="justify-content:space-between"><h1>Petugas QR</h1><span style="margin-right:8px">${tombolAkun().replace('btn-ikon-terang', 'btn-ikon-terang akun-gelap')}</span></div></div>
       <div class="isi"><div class="kartu"><div class="kosong">${sesi.libur ? `Hari ini libur: ${esc(sesi.libur.alasan)} (${esc(fmtTanggal(sesi.tanggal))}).` : `Tidak ada sesi Sekolah Minggu hari ini (${esc(fmtTanggal(sesi.tanggal))}).`}</div></div></div>`;
     return;
   }
@@ -31,7 +31,7 @@ export async function petugas(el, { ctx, query }) {
     <div class="hdr" style="padding-bottom:56px;gap:6px">
       <div class="baris-antara">
         <span class="kecil tebal" style="letter-spacing:.5px;opacity:.92">PETUGAS QR · ${esc(ctx.me.nama.toUpperCase())}</span>
-        <span class="kecil tebal" id="mode-badge" style="background:rgba(255,255,255,.18);padding:4px 10px;border-radius:999px"></span>
+        <span style="display:flex;align-items:center;gap:8px"><span class="kecil tebal" id="mode-badge" style="background:rgba(255,255,255,.18);padding:4px 10px;border-radius:999px"></span>${tombolAkun()}</span>
       </div>
       <span style="font-size:20px;font-weight:800" id="judul"></span>
       <span class="sedang" style="opacity:.92" id="subjudul"></span>

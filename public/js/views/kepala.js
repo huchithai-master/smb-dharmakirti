@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { esc, ikon, fmtTanggal, fmtBulan, peranLabel, toast, inisial, JENIS_IZIN, JABATAN } from '../ui.js';
+import { esc, ikon, tombolAkun, fmtTanggal, fmtBulan, peranLabel, toast, inisial, JENIS_IZIN, JABATAN } from '../ui.js';
 import { blokHonorLaporan, pasangLaporan, menuItem } from './admin-data.js';
 
 const qs = (o) => new URLSearchParams(Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== '')).toString();
@@ -52,7 +52,7 @@ export async function beranda(el, { ctx }) {
     <div class="hdr" style="padding-bottom:36px">
       <div class="hdr-atas">
         <div class="merek"><img class="merek-logo" src="/icons/logo-smb.png" alt="" width="26" height="31"> SMB Dharmakirti <span class="lencana">${wakil ? 'Wakil Kurikulum' : 'Kepala SMB'}</span></div>
-        <a class="btn-ikon-terang" href="#/akun" aria-label="Akun saya">${ikon.orang()}</a>
+        ${tombolAkun()}
       </div>
       <div class="sapaan">
         <div class="avatar">${esc(inisial(ctx.me.nama))}</div>

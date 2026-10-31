@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { esc, ikon, chip, fmtTanggal, fmtJam, peranLabel, toast, JENIS_IZIN } from '../ui.js';
+import { esc, ikon, tombolAkun, chip, fmtTanggal, fmtJam, peranLabel, toast, JENIS_IZIN } from '../ui.js';
 import { subNavKepala } from './kepala.js';
 
 export function subNav(aktif) {
@@ -20,17 +20,17 @@ function tabSlot(slots, slotId) {
 
 export const dashboard = (el, a) => tampilDashboard(el, a, {
   api: '/api/admin/dashboard', base: '/admin', lencana: 'Admin', subnav: () => subNav('dashboard'),
-  atas: `<a class="btn-ikon-terang" href="#/petugas" aria-label="Buka layar Petugas QR">${ikon.qr()}</a>`,
+  atas: `<div style="display:flex;gap:8px"><a class="btn-ikon-terang" href="#/petugas" aria-label="Buka layar Petugas QR">${ikon.qr()}</a>${tombolAkun()}</div>`,
 });
 
 // Dashboard Kepala SMB: semua kelas dan semua sesi hari itu, bisa melihat hari sebelumnya.
 export const dashboardKepala = (el, a) => tampilDashboard(el, a, {
-  api: '/api/kepala/dashboard', base: '/kepala/dashboard', lencana: 'Kepala SMB', subnav: () => subNavKepala('dashboard', false), atas: '', tanggal: true,
+  api: '/api/kepala/dashboard', base: '/kepala/dashboard', lencana: 'Kepala SMB', subnav: () => subNavKepala('dashboard', false), atas: tombolAkun(), tanggal: true,
 });
 
 // Dashboard Wakil Kurikulum: tampilan sama dengan admin, hanya kelas di jenjangnya.
 export const dashboardWakil = (el, a) => tampilDashboard(el, a, {
-  api: '/api/wakil/dashboard', base: '/wakil/dashboard', lencana: 'Wakil Kurikulum', subnav: () => subNavKepala('dashboard', true), atas: '', tanggal: true,
+  api: '/api/wakil/dashboard', base: '/wakil/dashboard', lencana: 'Wakil Kurikulum', subnav: () => subNavKepala('dashboard', true), atas: tombolAkun(), tanggal: true,
 });
 
 function blokSlot(data, slot, libur) {
