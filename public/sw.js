@@ -1,6 +1,6 @@
 // Service worker: menyimpan tampilan aplikasi agar cepat dibuka dan tetap tampil saat sinyal lemah.
 // Data (/api/) selalu diambil dari server dan tidak disimpan.
-const VERSI = 'smbh-v48';
+const VERSI = 'smbh-v49';
 const ASET = [
   '/',
   '/index.html',
@@ -20,6 +20,7 @@ const ASET = [
   '/js/views/siswa.js',
   '/js/views/kepala.js',
   '/js/views/impor.js',
+  '/js/views/notif.js',
   '/vendor/qrcode.js',
   '/vendor/jszip.min.js',
   '/vendor/jsQR.js',
@@ -55,5 +56,33 @@ self.addEventListener('fetch', (e) => {
         return res;
       })
       .catch(async () => (await caches.match(e.request)) || (e.request.mode === 'navigate' ? caches.match('/index.html') : Response.error())),
+  );
+});
+
+// Notifikasi dari server (Web Push): tampil di layar kunci walau aplikasi tertutup.
+self.addEventListener('push', (e) => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch { /* abaikan */ }
+  e.waitUntil(self.registration.showNotification(data.title || 'SMB Dharmakirti', {
+    body: data.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/favicon-64.png',
+    data: { url: data.url || '/#/notifikasi' },
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = e.notification.data?.url || '/#/notifikasi';
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((daftar) => {
+      for (const c of daftar) {
+        if ('focus' in c) {
+          c.navigate?.(url).catch(() => {});
+          return c.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    }),
   );
 });

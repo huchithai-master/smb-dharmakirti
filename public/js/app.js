@@ -11,6 +11,7 @@ import * as laporan from './views/laporan.js';
 import * as siswa from './views/siswa.js';
 import * as kepala from './views/kepala.js';
 import * as impor from './views/impor.js';
+import * as notif from './views/notif.js';
 
 export const ctx = {
   me: null,
@@ -38,6 +39,7 @@ const RUTE = [
   { path: '/murid/:id', view: siswa.formMuridPembina, perlu: 'bisa_murid', nav: 'murid' },
   { path: '/izin', view: pengajar.izin, perlu: 'is_pengajar', nav: 'izin' },
   { path: '/riwayat', view: pengajar.riwayat, perlu: 'is_pengajar', nav: 'riwayat' },
+  { path: '/notifikasi', view: notif.notifikasi, perlu: 'login' },
   { path: '/akun', view: pengajar.akun, perlu: 'login', nav: 'akun' },
   { path: '/petugas', view: petugas.petugas, perlu: 'is_petugas', nav: 'petugas' },
   { path: '/admin', view: admin.dashboard, perlu: 'is_admin', nav: 'admin' },
@@ -48,6 +50,7 @@ const RUTE = [
   { path: '/kepala/dashboard', view: admin.dashboardKepala, perlu: 'is_kepala', nav: 'kepala' },
   { path: '/wakil/dashboard', view: admin.dashboardWakil, perlu: 'is_wakil', nav: 'wakil' },
   { path: '/wakil/tugas', view: admin.tugas, perlu: 'is_wakil', nav: 'wakil' },
+  { path: '/admin/pengumuman', view: data.pengumuman, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/lainnya', view: data.lainnya, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/pengguna', view: data.daftarPengguna, perlu: 'is_admin', nav: 'admin' },
   { path: '/admin/pengguna/:id', view: data.formPengguna, perlu: 'is_admin', nav: 'admin' },
@@ -232,6 +235,33 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') tutupMenuAkun(); });
 window.addEventListener('hashchange', tutupMenuAkun);
 window.addEventListener('scroll', tutupMenuAkun, { passive: true });
+
+// ---- Lonceng notifikasi: angka belum dibaca di semua header ----
+let jumlahNotif = 0;
+let notifDimuat = 0;
+function terapkanLonceng() {
+  const label = jumlahNotif > 9 ? '9+' : String(jumlahNotif);
+  document.querySelectorAll('[data-lonceng] .lencana-notif').forEach((b) => {
+    if (b.hidden !== !jumlahNotif) b.hidden = !jumlahNotif;
+    if (jumlahNotif && b.textContent !== label) b.textContent = label;
+  });
+}
+async function segarkanLonceng(paksa = false) {
+  if (!ctx.me || document.visibilityState !== 'visible') return;
+  if (!paksa && Date.now() - notifDimuat < 20_000) return;
+  notifDimuat = Date.now();
+  try {
+    jumlahNotif = (await api('/api/notif/jumlah')).belum_dibaca;
+    terapkanLonceng();
+  } catch { /* abaikan */ }
+}
+new MutationObserver(() => {
+  terapkanLonceng();
+  if (document.querySelector('[data-lonceng]')) segarkanLonceng();
+}).observe(document.getElementById('app'), { childList: true, subtree: true });
+window.addEventListener('notif-berubah', () => segarkanLonceng(true));
+document.addEventListener('visibilitychange', () => segarkanLonceng());
+setInterval(() => segarkanLonceng(), 60_000);
 
 // ---- Keluar otomatis bila tidak dipakai atau ditinggalkan (aplikasi dialihkan) selama 10 menit ----
 const BATAS_DIAM_MS = 10 * 60 * 1000;

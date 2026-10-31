@@ -104,6 +104,8 @@ export const ikon = {
   tambah: (u = 20) => svg('<path d="M12 5v14M5 12h14"/>', u, 2.4),
   unduh: (u) => svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', u),
   keluar: (u) => svg('<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 16l-4-4 4-4M6 12h10"/>', u),
+  lonceng: (u) => svg('<path d="M6 9a6 6 0 0 1 12 0c0 6 2 7.5 2 7.5H4S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/>', u),
+  megafon: (u) => svg('<path d="M4 10v4a1 1 0 0 0 1 1h2l8 4V5L7 9H5a1 1 0 0 0-1 1z"/><path d="M19 9a4 4 0 0 1 0 6"/>', u),
   bawah: (u = 18) => svg('<path d="m6 9 6 6 6-6"/>', u, 2.4),
   panah: (u = 18) => svg('<path d="M5 12h14M13 6l6 6-6 6"/>', u, 2.4),
   bangunan: (u) => svg('<path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/>', u),
@@ -121,6 +123,9 @@ export function pasangPilihan(wadah, onUbah) {
 }
 
 // Tombol akun di pojok kanan atas; menunya (nama, peran, Keluar) dibuka oleh app.js.
+export const tombolLonceng = (kelas = '') =>
+  `<a class="btn-ikon-terang ${kelas}" href="#/notifikasi" data-lonceng aria-label="Notifikasi">${ikon.lonceng()}<span class="lencana-notif" hidden></span></a>`;
+
 export const tombolAkun = () =>
   `<button type="button" class="btn-ikon-terang" data-akun aria-label="Akun saya" aria-haspopup="menu" aria-expanded="false">${ikon.orang()}</button>`;
 

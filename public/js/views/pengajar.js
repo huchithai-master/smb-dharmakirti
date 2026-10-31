@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 import {
-  esc, ikon, chip, tombolAkun, fmtTanggal, fmtBulan, fmtJam, bulanSingkat, peranLabel, inisial, toast, JENIS_IZIN, JABATAN, pasangPilihan,
+  esc, ikon, chip, tombolAkun, tombolLonceng, fmtTanggal, fmtBulan, fmtJam, bulanSingkat, peranLabel, inisial, toast, JENIS_IZIN, JABATAN, pasangPilihan,
 } from '../ui.js';
 
 function infoSesi(s) {
@@ -106,7 +106,7 @@ export async function beranda(el, { ctx }) {
     <div class="hdr">
       <div class="hdr-atas">
         <div class="merek"><img class="merek-logo" src="/icons/logo-smb.png" alt="" width="26" height="31"> SMB Dharmakirti</div>
-        ${tombolAkun()}
+        <span class="grup-ikon">${tombolLonceng()}${tombolAkun()}</span>
       </div>
       <div class="sapaan">
         <div class="avatar">${esc(inisial(me.nama))}</div>

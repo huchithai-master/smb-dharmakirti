@@ -600,3 +600,18 @@ input.input[type="date"]:not(:focus):placeholder-shown::-webkit-datetime-edit { 
 .rw-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .rw-chips[hidden] { display: none; }
 .rw-chips span { font-size: 12px; font-weight: 600; background: var(--hijau-muda); color: var(--hijau-teks); padding: 5px 10px; border-radius: 999px; }
+
+/* Lonceng notifikasi */
+.grup-ikon { display: flex; align-items: center; gap: 8px; }
+[data-lonceng] { position: relative; }
+.lencana-notif { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; border-radius: 9px; padding: 0 4px; background: #d92d20; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--utama); }
+.lencana-notif[hidden] { display: none; }
+.btn-ikon-terang.akun-gelap .lencana-notif { border-color: #fff; }
+.notif-n { position: relative; display: flex; gap: 10px; align-items: flex-start; background: #fff; border: 1px solid var(--garis); border-radius: 14px; padding: 11px 12px; cursor: default; }
+.notif-n.baru { background: var(--utama-pilih); border-color: #c9d3f0; cursor: pointer; }
+.notif-titik { position: absolute; top: 12px; right: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--utama); }
+.notif-ic { width: 36px; height: 36px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; }
+.notif-ic.i-oranye { background: var(--oranye-bg); color: var(--oranye); }
+.notif-ic.i-merah { background: var(--merah-bg); color: var(--merah); }
+.notif-ic.i-hijau { background: var(--hijau-muda); color: var(--hijau-teks); }
+.notif-ic.i-biru { background: var(--utama-muda); color: var(--utama); }

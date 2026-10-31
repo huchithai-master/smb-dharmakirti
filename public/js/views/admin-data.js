@@ -58,6 +58,10 @@ export async function lainnya(el, { ctx }) {
         ${item('#/admin/kelas', ikon.buku(), 'Kelas', 'Daftar kelas Sekolah Minggu')}
         ${item('#/admin/slot', ikon.jam(), 'Slot &amp; Mode Absen', 'Jam sesi, jendela scan, konfirmasi atau absen masuk')}
       </div>
+      <span class="label-kecil">Notifikasi</span>
+      <div class="menu-grup">
+        ${item('#/admin/pengumuman', ikon.megafon(), 'Pengumuman &amp; Uji Notifikasi', 'Kirim pengumuman ke pengguna atau uji ke HP sendiri')}
+      </div>
       ${ctx.waktu?.demo_tersedia ? `<span class="label-kecil">Uji coba (hanya server lokal)</span>
       <div class="menu-grup">
         ${item('#/admin/waktu', ikon.kalender(), 'Simulasi Waktu', 'Ubah tanggal &amp; jam server untuk mencoba demo di hari lain')}
@@ -456,6 +460,64 @@ export async function slot(el, { ctx }) {
       ctx.muatUlang();
     } catch (err) {
       toast(err.message, 'galat');
+    }
+  });
+}
+
+export async function pengumuman(el) {
+  const d = await api('/api/admin/pengumuman');
+  const { aktifkanPush } = await import('./notif.js');
+  el.innerHTML = `
+    ${hdrKembali('Pengumuman & Uji Notifikasi', '#/admin/lainnya')}
+    <div class="isi">
+      <div class="info">${ikon.info()}<span>Pengumuman muncul di lonceng penerima dan, bila HP mereka sudah mengaktifkan notifikasi layar kunci, di layar kunci. Untuk uji coba, pilih "Hanya saya".</span></div>
+      <form class="kartu" id="form" novalidate>
+        <div class="galat" id="galat" role="alert"></div>
+        <div class="field"><label for="untuk">Kirim ke</label>
+          <select class="input" id="untuk">
+            <option value="saya">Hanya saya (uji coba)</option>
+            <option value="pimpinan">Kepala SMB dan Wakil</option>
+            <option value="pengajar">Semua pembina dan asisten</option>
+            <option value="semua">Semua pengguna aktif</option>
+          </select></div>
+        <div class="field"><label for="judul">Judul</label><input class="input" id="judul" maxlength="80" placeholder="Contoh: Rapat pembina Minggu depan" required></div>
+        <div class="field"><label for="isi">Isi (opsional)</label><textarea class="input" id="isi" rows="3" maxlength="300" placeholder="Contoh: Kumpul pukul 09.00 di aula"></textarea></div>
+        <button class="btn btn-utama" type="submit" id="kirim">Kirim pengumuman</button>
+      </form>
+      <div class="kartu">
+        <span class="tebal">Notifikasi layar kunci</span>
+        <span class="kecil muted">${d.perangkat} pengguna sudah mengaktifkannya. Aktifkan juga di HP ini untuk mencoba.</span>
+        <button class="btn btn-garis" id="aktif-di-sini" type="button">Aktifkan di HP ini</button>
+      </div>
+      ${d.terakhir.length ? `<span class="label-kecil">Terakhir dikirim</span>${d.terakhir.map((t) => `
+        <div class="kartu"><span class="tebal">${esc(t.judul)}</span>${t.isi ? `<span class="kecil muted">${esc(t.isi)}</span>` : ''}<span class="kecil muted">${t.penerima} penerima · ${esc(t.dibuat)} UTC</span></div>`).join('')}` : ''}
+    </div>`;
+  const form = el.querySelector('#form');
+  const galat = el.querySelector('#galat');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    galat.textContent = '';
+    const judul = el.querySelector('#judul').value.trim();
+    if (!judul) return (galat.textContent = 'Judul wajib diisi.');
+    const tombol = el.querySelector('#kirim');
+    tombol.disabled = true;
+    try {
+      const r = await api('/api/admin/pengumuman', { method: 'POST', body: { judul, isi: el.querySelector('#isi').value, untuk: el.querySelector('#untuk').value } });
+      toast(`Terkirim ke ${r.dikirim} orang${r.push_ok ? `, ${r.push_ok} perangkat layar kunci` : ''}.`);
+      window.dispatchEvent(new Event('notif-berubah'));
+      form.reset();
+    } catch (err) {
+      galat.textContent = err.message;
+    } finally {
+      tombol.disabled = false;
+    }
+  });
+  el.querySelector('#aktif-di-sini').addEventListener('click', async () => {
+    try {
+      await aktifkanPush();
+      toast('Notifikasi layar kunci aktif di HP ini.');
+    } catch (err) {
+      toast(err.message);
     }
   });
 }
