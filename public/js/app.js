@@ -112,8 +112,7 @@ function navBawah(aktif) {
   if (m.is_kepala) item.push(['kepala', '#/kepala', ikon.dokumen(), 'Kepala SMB']);
   if (m.is_wakil) item.push(['wakil', '#/wakil', ikon.dokumen(), 'Wakil']);
   if (m.is_admin) item.push(['admin', '#/admin', ikon.grafik(), 'Admin']);
-  // Tab Akun hanya untuk Admin; yang lain keluar lewat tombol akun di pojok kanan atas Beranda.
-  if (m.is_admin) item.push(['akun', '#/akun', ikon.orang(), 'Akun']);
+  // Tidak ada tab Akun: semua peran keluar lewat tombol akun di pojok kanan atas.
   // Satu tab saja tidak perlu bar bawah.
   if (item.length <= 1) return '';
   return `<nav class="nav-bawah" aria-label="Menu utama">${item
