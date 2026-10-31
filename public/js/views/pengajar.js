@@ -149,30 +149,52 @@ export async function beranda(el, { ctx }) {
   return () => clearInterval(segar);
 }
 
-export async function riwayat(el) {
-  const d = await api('/api/riwayat/sesi');
+export async function riwayat(el, { query }) {
+  const d = await api(`/api/riwayat/sesi${query.bulan ? '?bulan=' + encodeURIComponent(query.bulan) : ''}`);
+  const geser = (n) => {
+    const [y, m] = d.bulan.split('-').map(Number);
+    const t = new Date(Date.UTC(y, m - 1 + n, 1));
+    return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, '0')}`;
+  };
+  const maju = d.bulan < d.bulan_ini;
+  const [yy, mm] = d.bulan.split('-').map(Number);
+  const akhir = `${d.bulan}-${String(new Date(Date.UTC(yy, mm, 0)).getUTCDate()).padStart(2, '0')}`;
+  const maks = akhir < d.hari_ini ? akhir : d.hari_ini;
   const daftar = (a) => (a.length ? esc(a.join(', ')) : '<span class="muted">–</span>');
-  const tgl = [...new Set(d.sesi.map((s) => s.tanggal))];
+  const kartu = (s) => `
+    <div class="kartu">
+      <div class="baris-antara"><span class="kecil tebal muted">${esc(s.slot_nama.toUpperCase())}</span><span class="chip chip-hadir">${s.siswa.length} siswa hadir</span></div>
+      <div class="tebal" style="font-size:17px">Kelas ${esc(s.kelas_nama)}</div>
+      <div class="kecil"><span class="muted">Pembina:</span> ${daftar(s.pembina)}</div>
+      <div class="kecil"><span class="muted">Asisten:</span> ${daftar(s.asisten)}</div>
+      <div class="kecil"><span class="muted">Materi:</span> ${s.materi ? esc(s.materi) : '<span class="muted">belum diisi</span>'}</div>
+      ${s.siswa.length ? `<details><summary class="kecil tebal" style="cursor:pointer;min-height:36px;display:flex;align-items:center">Lihat siswa yang hadir</summary>
+        <div class="kecil" style="line-height:1.7">${esc(s.siswa.join(', '))}</div></details>` : ''}
+    </div>`;
   el.innerHTML = `
     <div class="hdr-putih"><div class="baris"><div class="tumpuk" style="padding-left:8px">
       <h1 style="padding-left:0">Riwayat</h1>
-      <span class="kecil muted">Sesi kelas Anda · ${esc(fmtBulan(d.bulan))}</span>
+      <span class="kecil muted">Sesi kelas Anda</span>
     </div></div></div>
     <div class="isi">
-      ${tgl.length ? tgl.map((t) => `
-        <h2 class="judul-seksi">${esc(fmtTanggal(t))}</h2>
-        ${d.sesi.filter((s) => s.tanggal === t).map((s) => `
-          <div class="kartu">
-            <div class="baris-antara"><span class="kecil tebal muted">${esc(s.slot_nama.toUpperCase())}</span><span class="chip chip-hadir">${s.siswa.length} siswa hadir</span></div>
-            <div class="tebal" style="font-size:17px">Kelas ${esc(s.kelas_nama)}</div>
-            <div class="kecil"><span class="muted">Pembina:</span> ${daftar(s.pembina)}</div>
-            <div class="kecil"><span class="muted">Asisten:</span> ${daftar(s.asisten)}</div>
-            <div class="kecil"><span class="muted">Materi:</span> ${s.materi ? esc(s.materi) : '<span class="muted">belum diisi</span>'}</div>
-            ${s.siswa.length ? `<details><summary class="kecil tebal" style="cursor:pointer;min-height:36px;display:flex;align-items:center">Lihat siswa yang hadir</summary>
-              <div class="kecil" style="line-height:1.7">${esc(s.siswa.join(', '))}</div></details>` : ''}
-          </div>`).join('')}`).join('')
-        : '<div class="kartu"><div class="kosong" style="padding:16px">Belum ada sesi bulan ini.</div></div>'}
+      <div class="baris-antara" style="gap:8px">
+        <a class="btn-kembali" href="#/riwayat?bulan=${geser(-1)}" aria-label="Bulan sebelumnya">${ikon.kiri()}</a>
+        <span class="tebal">${esc(fmtBulan(d.bulan))}</span>
+        ${maju ? `<a class="btn-kembali" href="#/riwayat?bulan=${geser(1)}" aria-label="Bulan berikutnya">${ikon.kanan()}</a>` : '<span class="btn-kembali" style="visibility:hidden"></span>'}
+      </div>
+      <div class="field"><label for="rw-tgl">Lompat ke tanggal</label>
+        <input class="input" type="date" id="rw-tgl" min="${d.bulan}-01" max="${maks}"></div>
+      <div id="rw-isi" class="tumpuk" style="gap:10px"></div>
     </div>`;
+  const isi = el.querySelector('#rw-isi');
+  const gambar = (tanggal) => {
+    const tgl = [...new Set(d.sesi.map((s) => s.tanggal))].filter((t) => !tanggal || t === tanggal);
+    isi.innerHTML = tgl.length
+      ? tgl.map((t) => `<h2 class="judul-seksi">${esc(fmtTanggal(t))}</h2>${d.sesi.filter((s) => s.tanggal === t).map(kartu).join('')}`).join('')
+      : `<div class="kartu"><div class="kosong" style="padding:16px">${tanggal ? 'Tidak ada sesi di tanggal ini.' : 'Belum ada sesi di bulan ini.'}</div></div>`;
+  };
+  el.querySelector('#rw-tgl').addEventListener('change', (e) => gambar(e.target.value));
+  gambar('');
 }
 
 export async function izin(el) {
