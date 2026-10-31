@@ -157,20 +157,29 @@ export async function riwayat(el, { query }) {
     return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, '0')}`;
   };
   const maju = d.bulan < d.bulan_ini;
-  const [yy, mm] = d.bulan.split('-').map(Number);
-  const akhir = `${d.bulan}-${String(new Date(Date.UTC(yy, mm, 0)).getUTCDate()).padStart(2, '0')}`;
-  const maks = akhir < d.hari_ini ? akhir : d.hari_ini;
-  const daftar = (a) => (a.length ? esc(a.join(', ')) : '<span class="muted">–</span>');
-  const kartu = (s) => `
-    <div class="kartu">
-      <div class="baris-antara"><span class="kecil tebal muted">${esc(s.slot_nama.toUpperCase())}</span><span class="chip chip-hadir">${s.siswa.length} siswa hadir</span></div>
-      <div class="tebal" style="font-size:17px">Kelas ${esc(s.kelas_nama)}</div>
-      <div class="kecil"><span class="muted">Pembina:</span> ${daftar(s.pembina)}</div>
-      <div class="kecil"><span class="muted">Asisten:</span> ${daftar(s.asisten)}</div>
-      <div class="kecil"><span class="muted">Materi:</span> ${s.materi ? esc(s.materi) : '<span class="muted">belum diisi</span>'}</div>
-      ${s.siswa.length ? `<details><summary class="kecil tebal" style="cursor:pointer;min-height:36px;display:flex;align-items:center">Lihat siswa yang hadir</summary>
-        <div class="kecil" style="line-height:1.7">${esc(s.siswa.join(', '))}</div></details>` : ''}
+  const orang = (nama, peran) => `
+    <div class="rw-o"><div class="rw-av ${peran === 'Asisten' ? 'as' : ''}">${esc(inisial(nama))}</div>
+      <div class="tumpuk"><span class="rw-n">${esc(nama)}</span><span class="rw-r">${peran}</span></div></div>`;
+  const kosongOrang = (peran) => `<div class="rw-o"><div class="rw-av as">–</div><div class="tumpuk"><span class="rw-n muted">Belum ada yang hadir</span><span class="rw-r">${peran}</span></div></div>`;
+  const kartu = (s, i) => `
+    <div class="kartu rw-k">
+      <div class="rw-hd">
+        <div class="tumpuk" style="min-width:0">
+          <span class="rw-slot ${s.slot_nama === 'Pagi' ? '' : 'sg'}">${esc(s.slot_nama)}${s.jam_mulai ? ' · ' + fmtJam(s.jam_mulai) : ''}</span>
+          <span class="rw-kn">Kelas ${esc(s.kelas_nama)}</span>
+        </div>
+        <div class="rw-ring"><b>${s.total ? `${s.siswa.length}/${s.total}` : '–'}</b><i>hadir</i></div>
+      </div>
+      <div class="tumpuk" style="gap:8px">
+        ${(s.pembina.length ? s.pembina.map((n) => orang(n, 'Pembina')).join('') : kosongOrang('Pembina'))}
+        ${(s.asisten.length ? s.asisten.map((n) => orang(n, 'Asisten')).join('') : '')}
+      </div>
+      <div class="rw-mat"><span class="rw-l">Materi</span><span class="rw-v ${s.materi ? '' : 'muted'}">${s.materi ? esc(s.materi) : 'Belum diisi'}</span></div>
+      ${s.siswa.length ? `
+        <button type="button" class="rw-btn" data-buka="${i}" data-n="${s.siswa.length}" aria-expanded="false"><span>Lihat ${s.siswa.length} siswa yang hadir</span>${ikon.bawah()}</button>
+        <div class="rw-chips" id="rw-c${i}" hidden>${s.siswa.map((n) => `<span>${esc(n)}</span>`).join('')}</div>` : ''}
     </div>`;
+  const tgl = [...new Set(d.sesi.map((s) => s.tanggal))];
   el.innerHTML = `
     <div class="hdr-putih"><div class="baris"><div class="tumpuk" style="padding-left:8px">
       <h1 style="padding-left:0">Riwayat</h1>
@@ -179,22 +188,20 @@ export async function riwayat(el, { query }) {
     <div class="isi">
       <div class="baris-antara" style="gap:8px">
         <a class="btn-kembali" href="#/riwayat?bulan=${geser(-1)}" aria-label="Bulan sebelumnya">${ikon.kiri()}</a>
-        <span class="tebal">${esc(fmtBulan(d.bulan))}</span>
+        <span class="tebal" style="color:var(--utama)">${esc(fmtBulan(d.bulan))}</span>
         ${maju ? `<a class="btn-kembali" href="#/riwayat?bulan=${geser(1)}" aria-label="Bulan berikutnya">${ikon.kanan()}</a>` : '<span class="btn-kembali" style="visibility:hidden"></span>'}
       </div>
-      <div class="field"><label for="rw-tgl">Lompat ke tanggal</label>
-        <input class="input" type="date" id="rw-tgl" min="${d.bulan}-01" max="${maks}"></div>
-      <div id="rw-isi" class="tumpuk" style="gap:10px"></div>
+      ${tgl.length ? tgl.map((t) => {
+        const hari = d.sesi.map((s, i) => [s, i]).filter(([s]) => s.tanggal === t);
+        return `<div class="baris-antara"><h2 class="judul-seksi" style="margin:0">${esc(fmtTanggal(t))}</h2><span class="kecil muted">${hari.length} sesi</span></div>${hari.map(([s, i]) => kartu(s, i)).join('')}`;
+      }).join('') : '<div class="kartu"><div class="kosong" style="padding:16px">Belum ada sesi di bulan ini.</div></div>'}
     </div>`;
-  const isi = el.querySelector('#rw-isi');
-  const gambar = (tanggal) => {
-    const tgl = [...new Set(d.sesi.map((s) => s.tanggal))].filter((t) => !tanggal || t === tanggal);
-    isi.innerHTML = tgl.length
-      ? tgl.map((t) => `<h2 class="judul-seksi">${esc(fmtTanggal(t))}</h2>${d.sesi.filter((s) => s.tanggal === t).map(kartu).join('')}`).join('')
-      : `<div class="kartu"><div class="kosong" style="padding:16px">${tanggal ? 'Tidak ada sesi di tanggal ini.' : 'Belum ada sesi di bulan ini.'}</div></div>`;
-  };
-  el.querySelector('#rw-tgl').addEventListener('change', (e) => gambar(e.target.value));
-  gambar('');
+  el.querySelectorAll('[data-buka]').forEach((b) => b.addEventListener('click', () => {
+    const buka = b.getAttribute('aria-expanded') !== 'true';
+    b.setAttribute('aria-expanded', String(buka));
+    el.querySelector(`#rw-c${b.dataset.buka}`).hidden = !buka;
+    b.firstElementChild.textContent = buka ? 'Sembunyikan daftar siswa' : `Lihat ${b.dataset.n} siswa yang hadir`;
+  }));
 }
 
 export async function izin(el) {
