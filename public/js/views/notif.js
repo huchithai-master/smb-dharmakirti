@@ -45,6 +45,26 @@ export async function matikanPush() {
   }
 }
 
+function bukaRincian(n) {
+  document.getElementById('rincian-notif')?.remove();
+  const latar = document.createElement('div');
+  latar.id = 'rincian-notif';
+  latar.className = 'modal-latar';
+  latar.innerHTML = `
+    <div class="modal-notif" role="dialog" aria-modal="true" aria-label="${esc(n.judul)}">
+      <div class="mn-judul">${esc(n.judul)}</div>
+      <div class="mn-waktu">${waktuLalu(n.dibuat)}</div>
+      ${n.isi ? `<div class="mn-isi">${esc(n.isi)}</div>` : ''}
+      <button type="button" class="btn btn-utama" id="tutup-rincian">Tutup</button>
+    </div>`;
+  const tutup = () => { latar.remove(); document.removeEventListener('keydown', esc_); };
+  const esc_ = (e) => { if (e.key === 'Escape') tutup(); };
+  latar.addEventListener('click', (e) => { if (e.target === latar) tutup(); });
+  latar.querySelector('#tutup-rincian').addEventListener('click', tutup);
+  document.addEventListener('keydown', esc_);
+  document.body.appendChild(latar);
+}
+
 export async function notifikasi(el, { ctx }) {
   const d = await api('/api/notif');
   let aktifDiPerangkat = false;
@@ -70,11 +90,11 @@ export async function notifikasi(el, { ctx }) {
       <div class="notif-n ${n.dibaca ? '' : 'baru'}" data-id="${n.id}">
         ${n.dibaca ? '' : '<span class="notif-titik"></span>'}
         <div class="notif-ic ${WARNA[n.jenis] ?? 'i-biru'}">${ikon[IKON[n.jenis] ?? 'info'](20)}</div>
-        <div class="tumpuk" style="gap:2px;min-width:0">
-          <span class="tebal" style="font-size:14px">${esc(n.judul)}</span>
-          ${n.isi ? `<span class="kecil" style="color:#4b5563">${esc(n.isi)}</span>` : ''}
+        <div class="tumpuk" style="gap:3px;min-width:0">
+          <span class="tebal" style="font-size:15px;line-height:1.3">${esc(n.judul)}</span>
           <span class="kecil muted">${waktuLalu(n.dibuat)}</span>
         </div>
+        ${ikon.kanan(16)}
       </div>`;
     el.innerHTML = `
       <div class="hdr-putih"><div class="baris">
@@ -95,12 +115,16 @@ export async function notifikasi(el, { ctx }) {
       window.dispatchEvent(new Event('notif-berubah'));
       gambar();
     });
-    el.querySelectorAll('.notif-n.baru').forEach((n) => n.addEventListener('click', async () => {
-      await api('/api/notif/baca', { method: 'POST', body: { id: Number(n.dataset.id) } }).catch(() => {});
+    el.querySelectorAll('.notif-n').forEach((n) => n.addEventListener('click', async () => {
       const item = d.daftar.find((x) => x.id === Number(n.dataset.id));
-      if (item) item.dibaca = 1;
-      window.dispatchEvent(new Event('notif-berubah'));
-      gambar();
+      if (!item) return;
+      bukaRincian(item);
+      if (!item.dibaca) {
+        item.dibaca = 1;
+        await api('/api/notif/baca', { method: 'POST', body: { id: item.id } }).catch(() => {});
+        window.dispatchEvent(new Event('notif-berubah'));
+        gambar();
+      }
     }));
     el.querySelector('#push-nyala')?.addEventListener('click', async (e) => {
       e.currentTarget.disabled = true;

@@ -481,7 +481,8 @@ export async function pengumuman(el) {
             <option value="semua">Semua pengguna aktif</option>
           </select></div>
         <div class="field"><label for="judul">Judul</label><input class="input" id="judul" maxlength="80" placeholder="Contoh: Rapat pembina Minggu depan" required></div>
-        <div class="field"><label for="isi">Isi (opsional)</label><textarea class="input" id="isi" rows="3" maxlength="300" placeholder="Contoh: Kumpul pukul 09.00 di aula"></textarea></div>
+        <div class="field"><label for="isi">Isi (opsional)</label><textarea class="input" id="isi" rows="9" maxlength="1500" placeholder="Tulis isi pengumuman. Baris baru dan emoji ikut tampil apa adanya."></textarea>
+          <button type="button" class="btn btn-garis" id="contoh" style="margin-top:8px">Isi contoh undangan rapat</button></div>
         <button class="btn btn-utama" type="submit" id="kirim">Kirim pengumuman</button>
       </form>
       <div class="kartu">
@@ -511,6 +512,17 @@ export async function pengumuman(el) {
     } finally {
       tombol.disabled = false;
     }
+  });
+  el.querySelector('#contoh').addEventListener('click', () => {
+    el.querySelector('#judul').value = 'Undangan Rapat';
+    el.querySelector('#isi').value = [
+      'Namo Sanghyang Adi Buddhaya, Namo Buddhaya 🙏🏻', '',
+      'Undangan Rapat persiapan Kathina Pelajar:', '',
+      '🗓️ Minggu, 08 November 2026', '🕚 11.00 WIB – selesai', '📍 Kelas 5 SMB, Lantai 3', '',
+      'Terima kasih atas kehadirannya.', '',
+      'Semoga Semua Makhluk Hidup Berbahagia.', '',
+      'Sadhu, Sadhu, Sadhu. 🙏🏻',
+    ].join('\n');
   });
   el.querySelector('#aktif-di-sini').addEventListener('click', async () => {
     try {
