@@ -65,7 +65,7 @@ function blokSlot(data, slot, libur) {
   };
 
   return `
-      ${data?.raya ? `<div class="info info-oranye">${ikon.info()}<span><b>${esc(libur?.alasan ?? 'Hari Raya')}</b> · semua pembina, asisten, dan pengurus absen kedatangan ${fmtJam(slot.scan_mulai)}–${fmtJam(slot.scan_selesai)}${slot.pulang_mulai ? `, absen pulang ${fmtJam(slot.pulang_mulai)}–${fmtJam(slot.pulang_selesai)}` : ''}.</span></div>` : ''}
+      ${data?.raya ? `<div class="info info-oranye">${ikon.info()}<span><b>${esc(libur?.alasan ?? 'Hari Raya')}</b> · semua pembina, asisten, dan pengurus absen kedatangan ${fmtJam(slot.scan_mulai)}–${fmtJam(slot.scan_selesai)}${slot.pulang_mulai ? `, absen pulang ${fmtJam(slot.pulang_mulai)}–${fmtJam(slot.pulang_selesai)}` : ''}.</span><a href="#/scan" style="margin-left:auto;white-space:nowrap;font-weight:700">Scan absen</a></div>` : ''}
       ${r ? `<div class="stat-grid ${data?.raya ? 'dua' : 'tiga'}">${stat.map(([l, n, ket]) => `<div class="stat"><b>${n}</b><span style="color:var(--utama)">${l}</span>${ket ? `<small class="muted">${ket}</small>` : ''}</div>`).join('')}</div>` : ''}
       ${data ? `<h2 class="judul-seksi">Status per kelas</h2>
         ${data.kelas.map((k) => {
