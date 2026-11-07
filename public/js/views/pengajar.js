@@ -71,7 +71,7 @@ function kartuSesi(s, bisaScan, namaSaya) {
       <div class="baris-antara" style="align-items:flex-start">
         <div class="tumpuk" style="gap:4px">
           <span class="slot-label ${s.status_slot === 'buka' ? '' : 'abu'}">${s.raya ? `${esc(s.slot_nama)} · Absen Kedatangan · ${fmtJam(s.scan_mulai)}` : `Slot ${esc(s.slot_nama)} · ${fmtJam(s.jam_mulai)}–${fmtJam(s.jam_selesai)}`}</span>
-          <span class="nama-kelas">${s.raya ? 'Semua pembina &amp; asisten' : `Kelas ${esc(s.kelas_nama)}`}</span>
+          <span class="nama-kelas">${s.raya ? 'Semua pembina, asisten &amp; pengurus' : `Kelas ${esc(s.kelas_nama)}`}</span>
         </div>
         ${s.status === 'izin' ? `<span class="chip chip-izin">${JENIS_IZIN[s.izin_jenis] ?? 'Izin'}</span>` : chip(s.status)}
       </div>
@@ -99,7 +99,7 @@ export async function beranda(el, { ctx }) {
     : '';
 
   const bannerRaya = d.libur?.jenis === 'raya' && d.sesi.some((x) => x.raya)
-    ? `<div class="info info-oranye">${ikon.info()}<span><b>${esc(d.libur.alasan)}</b>. Hari ini tidak ada kelas: semua pembina dan asisten absen kedatangan satu kali. Honor tetap dihitung.</span></div>`
+    ? `<div class="info info-oranye">${ikon.info()}<span><b>${esc(d.libur.alasan)}</b>. Hari ini tidak ada kelas: semua pembina, asisten, dan pengurus (kepala, wakil, bendahara, sekretaris) absen kedatangan. Honor tetap dihitung.</span></div>`
     : '';
 
   el.innerHTML = `

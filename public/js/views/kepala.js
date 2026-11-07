@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { esc, ikon, tombolAkun, tombolLonceng, fmtTanggal, fmtBulan, peranLabel, toast, inisial, JENIS_IZIN, JABATAN } from '../ui.js';
+import { esc, ikon, tombolAkun, tombolLonceng, fmtTanggal, fmtBulan, fmtJam, peranLabel, toast, inisial, JENIS_IZIN, JABATAN } from '../ui.js';
 import { blokHonorLaporan, pasangLaporan, menuItem } from './admin-data.js';
 
 const qs = (o) => new URLSearchParams(Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== '')).toString();
@@ -41,11 +41,21 @@ function rekapIzinHtml(r) {
 export async function beranda(el, { ctx }) {
   const wakil = !ctx.me.is_kepala;
   const P = wakil ? 'wakil' : 'kepala';
-  const [d, rekap] = await Promise.all([
+  const [d, rekap, hariIni] = await Promise.all([
     api(`/api/${P}/ringkasan`),
     api(`/api/${P}/izin-bulan${bulanIzin ? '?bulan=' + bulanIzin : ''}`),
+    // Hari Raya: pengurus yang bukan pembina juga absen lewat scan QR.
+    ctx.me.is_pengajar ? Promise.resolve(null) : api('/api/beranda').catch(() => null),
   ]);
   bulanIzin = rekap.bulan;
+  const sesiRaya = hariIni?.sesi?.find((x) => x.raya);
+  const bannerRaya = sesiRaya
+    ? `<div class="kartu" style="background:var(--oranye-bg);border-color:var(--oranye-garis)">
+         <span class="label-kecil" style="color:var(--oranye)">${esc(sesiRaya.slot_nama)}</span>
+         <span class="tebal">Absen kedatangan ${fmtJam(sesiRaya.scan_mulai)}–${fmtJam(sesiRaya.scan_selesai)}${sesiRaya.ada_pulang ? `, pulang ${fmtJam(sesiRaya.pulang_mulai)}–${fmtJam(sesiRaya.pulang_selesai)}` : ''}</span>
+         <span class="kecil muted">${sesiRaya.status === 'hadir' || sesiRaya.status === 'terlambat' ? `Kedatangan tercatat pukul ${fmtJam(sesiRaya.jam)}${sesiRaya.jam_pulang ? `, pulang ${fmtJam(sesiRaya.jam_pulang)}` : ''}.` : 'Anda belum absen.'}</span>
+         <a class="btn btn-utama btn-kecil" style="width:auto" href="#/scan">Scan QR absen</a>
+       </div>` : '';
   const tindakan = d.izin_menunggu.length + d.butuh_pengganti.length;
 
   el.innerHTML = `
@@ -66,6 +76,7 @@ export async function beranda(el, { ctx }) {
     </div>
     <div class="isi">
       ${subNavKepala('beranda', wakil)}
+      ${bannerRaya}
       ${d.butuh_pengganti.length ? `
       <div class="kartu" style="background:var(--oranye-bg);border-color:var(--oranye-garis)">
         <span class="label-kecil" style="color:var(--oranye)">Butuh pengganti</span>

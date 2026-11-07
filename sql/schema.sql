@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS absensi (
   tanggal TEXT NOT NULL,
   slot_id INTEGER NOT NULL REFERENCES slot(id) ON DELETE CASCADE,
   pengguna_id INTEGER NOT NULL REFERENCES pengguna(id) ON DELETE CASCADE,
-  kelas_id INTEGER NOT NULL REFERENCES kelas(id) ON DELETE CASCADE,
+  kelas_id INTEGER REFERENCES kelas(id) ON DELETE CASCADE, -- kosong untuk pengurus pada Hari Raya
   peran TEXT NOT NULL,
   jenis_tugas TEXT NOT NULL,
   jam_scan TEXT NOT NULL,

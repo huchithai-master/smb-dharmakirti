@@ -32,7 +32,8 @@ const RUTE = [
   { path: '/login', view: auth.login, publik: true, polos: true },
   { path: '/aktivasi', view: auth.aktivasi, publik: true, polos: true },
   { path: '/', view: pengajar.beranda, perlu: 'is_pengajar', nav: 'beranda' },
-  { path: '/scan', view: scan.scan, perlu: 'is_pengajar', polos: true },
+  { path: '/raya', view: pengajar.beranda, perlu: 'ikut_raya', nav: 'beranda' }, // pengurus non-pembina pada Hari Raya
+  { path: '/scan', view: scan.scan, perlu: 'ikut_raya', polos: true },
   { path: '/siswa', view: siswa.absenSiswa, perlu: 'is_pengajar', nav: 'beranda' },
   { path: '/murid', view: siswa.muridPembina, perlu: 'bisa_murid', nav: 'murid' },
   { path: '/murid/impor', view: impor.imporMurid, perlu: 'bisa_murid', nav: 'murid' },
@@ -86,6 +87,7 @@ export function rumah() {
   if (m.is_wakil) return '/wakil';
   if (m.is_admin) return '/admin';
   if (m.is_petugas) return '/petugas';
+  if (m.ikut_raya) return '/raya';
   return '/akun';
 }
 
