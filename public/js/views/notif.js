@@ -65,7 +65,7 @@ function bukaRincian(n) {
   document.body.appendChild(latar);
 }
 
-export async function notifikasi(el, { ctx }) {
+export async function notifikasi(el, { ctx, query }) {
   const d = await api('/api/notif');
   let aktifDiPerangkat = false;
   if (dukungPush() && Notification.permission === 'granted') {
@@ -145,4 +145,18 @@ export async function notifikasi(el, { ctx }) {
     });
   };
   gambar();
+  // Dari layar kunci: ?buka=<id> langsung membuka popup notifikasi itu.
+  const idBuka = Number(query?.buka);
+  if (idBuka) {
+    history.replaceState(null, '', '#/notifikasi');
+    const item = d.daftar.find((x) => x.id === idBuka);
+    if (item) {
+      bukaRincian(item);
+      if (!item.dibaca) {
+        item.dibaca = 1;
+        api('/api/notif/baca', { method: 'POST', body: { id: item.id } }).catch(() => {}).then(() => window.dispatchEvent(new Event('notif-berubah')));
+        gambar();
+      }
+    }
+  }
 }

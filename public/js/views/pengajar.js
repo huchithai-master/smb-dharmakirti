@@ -5,7 +5,7 @@ import {
 
 function infoSesi(s) {
   if (s.raya) {
-    return `<b>Absen kedatangan.</b> Scan di petugas pintu masuk pukul ${fmtJam(s.scan_mulai)}–${fmtJam(s.scan_selesai)}. Cukup tercatat hadir, tanpa status terlambat.`;
+    return `<b>Absen kedatangan.</b> Scan di petugas pintu masuk pukul ${fmtJam(s.scan_mulai)}–${fmtJam(s.scan_selesai)}. Cukup tercatat hadir, tanpa status terlambat.${s.ada_pulang ? ` <b>Absen pulang</b> scan lagi pukul ${fmtJam(s.pulang_mulai)}–${fmtJam(s.pulang_selesai)}.` : ''}`;
   }
   if (s.mode === 'konfirmasi') {
     return `<b>Konfirmasi ${fmtJam(s.scan_mulai)}–${fmtJam(s.scan_selesai)}.</b> Petugas akan datang ke kelas. Tidak ada status terlambat.`;

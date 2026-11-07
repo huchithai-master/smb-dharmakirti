@@ -122,6 +122,8 @@ CREATE TABLE IF NOT EXISTS libur (
   alasan TEXT NOT NULL,
   scan_mulai TEXT,
   scan_selesai TEXT,
+  pulang_mulai TEXT,
+  pulang_selesai TEXT,
   dibuat_oleh INTEGER REFERENCES pengguna(id) ON DELETE SET NULL
 );
 

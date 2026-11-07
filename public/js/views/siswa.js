@@ -451,7 +451,7 @@ export async function libur(el, { ctx }) {
   const baris = (l, bisaHapus) => `
     <div class="kartu rapat"><div class="baris-antara">
       <div class="tumpuk"><span class="tebal">${esc(l.alasan)}</span>
-        <span class="kecil muted">${l.jenis === 'semester' ? 'Libur semester' : l.jenis === 'raya' ? 'Hari Raya' : 'Libur harian'} · ${esc(rentang(l))}${l.jenis === 'raya' ? ` · absen kedatangan ${esc(fmtJam(l.scan_mulai))}–${esc(fmtJam(l.scan_selesai))}` : ''}</span></div>
+        <span class="kecil muted">${l.jenis === 'semester' ? 'Libur semester' : l.jenis === 'raya' ? 'Hari Raya' : 'Libur harian'} · ${esc(rentang(l))}${l.jenis === 'raya' ? ` · absen kedatangan ${esc(fmtJam(l.scan_mulai))}–${esc(fmtJam(l.scan_selesai))}${l.pulang_mulai ? `, absen pulang ${esc(fmtJam(l.pulang_mulai))}–${esc(fmtJam(l.pulang_selesai))}` : ''}` : ''}</span></div>
       ${bisaHapus ? `<button class="btn btn-bahaya btn-kecil" style="width:auto" data-hapus="${l.id}">Hapus</button>` : ''}
     </div></div>`;
 
@@ -478,7 +478,12 @@ export async function libur(el, { ctx }) {
             <div class="field"><label for="scan-mulai">Absen dibuka mulai</label><input class="input" type="time" id="scan-mulai" value="07:00"></div>
             <div class="field"><label for="scan-selesai">Absen ditutup pukul</label><input class="input" type="time" id="scan-selesai" value="10:00"></div>
           </div>
-          <div class="info info-oranye" style="margin-top:10px">${ikon.info()}<span><b>Mode Hari Raya.</b> Sesi pagi dan siang digabung jadi satu <b>Absen Kedatangan</b> untuk semua pembina dan asisten. Cukup tercatat hadir (tanpa terlambat), tanpa absen siswa dan absen pulang. Honor dihitung satu sesi, izin tetap bisa diajukan.</span></div>
+          <div class="grid2 kolom-hp">
+            <div class="field"><label for="pulang-mulai">Absen pulang dibuka (opsional)</label><input class="input" type="time" id="pulang-mulai"></div>
+            <div class="field"><label for="pulang-selesai">Absen pulang ditutup</label><input class="input" type="time" id="pulang-selesai"></div>
+          </div>
+          <span class="kecil muted">Kosongkan kedua jam pulang bila Hari Raya ini hanya memakai absen kedatangan.</span>
+          <div class="info info-oranye" style="margin-top:10px">${ikon.info()}<span><b>Mode Hari Raya.</b> Sesi pagi dan siang digabung jadi satu <b>Absen Kedatangan</b> untuk semua pembina dan asisten. Cukup tercatat hadir (tanpa terlambat), tanpa absen siswa. Absen pulang boleh diatur di bawah. Honor dihitung satu sesi, izin tetap bisa diajukan.</span></div>
         </div>
         <button class="btn btn-utama" type="submit">Simpan libur</button>
       </form>
@@ -525,7 +530,7 @@ export async function libur(el, { ctx }) {
         method: 'POST',
         body: {
           jenis, mulai: $('mulai').value, selesai: jenis === 'semester' ? $('selesai').value : null, alasan: $('alasan').value,
-          ...(jenis === 'raya' ? { scan_mulai: $('scan-mulai').value, scan_selesai: $('scan-selesai').value } : {}),
+          ...(jenis === 'raya' ? { scan_mulai: $('scan-mulai').value, scan_selesai: $('scan-selesai').value, pulang_mulai: $('pulang-mulai').value, pulang_selesai: $('pulang-selesai').value } : {}),
         },
       });
       toast('Libur tersimpan.');

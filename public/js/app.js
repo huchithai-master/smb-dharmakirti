@@ -146,7 +146,11 @@ async function render(opsi) {
   const { path, query } = bacaHash();
   let rute = RUTE.find((r) => r.pola.test(path));
   if (!rute) return ctx.pergi(rumah());
-  if (!rute.publik && !ctx.me) return ctx.pergi('/login');
+  if (!rute.publik && !ctx.me) {
+    // Ingat tujuan (mis. notifikasi dari layar kunci) supaya setelah login langsung ke sana.
+    try { sessionStorage.setItem('smb_tujuan', location.hash.replace(/^#/, '')); } catch { /* abaikan */ }
+    return ctx.pergi('/login');
+  }
   if (rute.path === '/login' && ctx.me) return ctx.pergi(rumah());
   if (rute.perlu && rute.perlu !== 'login' && !ctx.me[rute.perlu]) return ctx.pergi(rumah());
 

@@ -177,7 +177,13 @@ function formMasuk(el, ctx) {
       await api('/api/login', { method: 'POST', body: { hp, pin, ingat: form.ingat.checked } });
       if (form.ingat.checked) simpanIngat(hp, pin); else hapusIngat();
       await ctx.segarkanMe();
-      location.hash = '/';
+      let tujuan = '/';
+      try {
+        const t = sessionStorage.getItem('smb_tujuan');
+        sessionStorage.removeItem('smb_tujuan');
+        if (t && t.startsWith('/') && !t.startsWith('/login') && !t.startsWith('/aktivasi')) tujuan = t;
+      } catch { /* abaikan */ }
+      location.hash = tujuan;
     } catch (err) {
       galat.textContent = err.message;
       if (form.ingat.checked) hapusIngat(); // PIN tersimpan ternyata salah: jangan dipakai lagi
