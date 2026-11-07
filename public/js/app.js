@@ -330,6 +330,11 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 if ('serviceWorker' in navigator && window.isSecureContext) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker.addEventListener('message', (e) => {
+    if (e.data?.jenis !== 'buka-notif' || !e.data.url) return;
+    const tujuan = String(e.data.url).replace(/^\/?#/, '');
+    if (location.hash.replace(/^#/, '') === tujuan) render(); else location.hash = tujuan;
+  });
 }
 
 (async function mulai() {

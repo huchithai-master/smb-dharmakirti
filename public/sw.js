@@ -1,6 +1,6 @@
 // Service worker: menyimpan tampilan aplikasi agar cepat dibuka dan tetap tampil saat sinyal lemah.
 // Data (/api/) selalu diambil dari server dan tidak disimpan.
-const VERSI = 'smbh-v54';
+const VERSI = 'smbh-v55';
 const ASET = [
   '/',
   '/index.html',
@@ -78,7 +78,8 @@ self.addEventListener('notificationclick', (e) => {
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((daftar) => {
       for (const c of daftar) {
         if ('focus' in c) {
-          c.navigate?.(url).catch(() => {});
+          // Beri tahu aplikasi yang sedang terbuka supaya langsung membuka isi notifikasi.
+          c.postMessage({ jenis: 'buka-notif', url });
           return c.focus();
         }
       }
