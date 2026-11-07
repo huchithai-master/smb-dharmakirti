@@ -81,7 +81,9 @@ export async function absenSiswa(el, { query, ctx }) {
   el.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-murid] [data-v]');
     if (b) {
-      status.set(Number(b.parentElement.dataset.murid), b.dataset.v);
+      // Menekan status yang sama dua kali membatalkannya (kembali ke "belum diabsen"), untuk koreksi salah pilih.
+      const id = Number(b.parentElement.dataset.murid);
+      status.set(id, status.get(id) === b.dataset.v ? null : b.dataset.v);
       tersimpan = d.murid.length === 0 ? true : false;
       gambar();
       return;
