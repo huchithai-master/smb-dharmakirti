@@ -263,8 +263,9 @@ window.addEventListener('notif-berubah', () => segarkanLonceng(true));
 document.addEventListener('visibilitychange', () => segarkanLonceng());
 setInterval(() => segarkanLonceng(), 60_000);
 
-// ---- Keluar otomatis bila tidak dipakai atau ditinggalkan (aplikasi dialihkan) selama 10 menit ----
-const BATAS_DIAM_MS = 10 * 60 * 1000;
+// ---- Keluar otomatis karena tidak aktif: NONAKTIF (keluar hanya manual lewat tombol akun). ----
+// Untuk mengaktifkan lagi, ganti Infinity dengan batas dalam milidetik, mis. 10 * 60 * 1000.
+const BATAS_DIAM_MS = Infinity;
 const KUNCI_AKTIF = 'smb_aktif_terakhir';
 let aktifTerakhir = Date.now();
 
@@ -330,7 +331,7 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
 (async function mulai() {
   try {
     await muatMe();
-    // Aplikasi dibuka lagi setelah ditinggal lebih dari 10 menit: minta login ulang.
+    // Bila keluar otomatis diaktifkan (BATAS_DIAM_MS terbatas): aplikasi dibuka lagi setelah ditinggal lama, minta login ulang.
     const tersimpan = bacaAktifTersimpan();
     if (ctx.me && tersimpan && Date.now() - tersimpan > BATAS_DIAM_MS) {
       await keluarOtomatis();
