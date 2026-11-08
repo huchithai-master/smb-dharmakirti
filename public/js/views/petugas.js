@@ -10,6 +10,21 @@ export async function petugas(el, { ctx, query }) {
     return;
   }
   const [sesi] = await Promise.all([api('/api/petugas/sesi'), muatSkrip('/vendor/qrcode.js')]);
+  // Hari Raya: Petugas QR juga absen, dengan memindai QR dari Petugas QR lain.
+  const kartuRaya = async () => {
+    try {
+      const sr = (await api('/api/beranda')).sesi?.find((x) => x.raya);
+      if (!sr) return;
+      const k = document.createElement('div');
+      k.className = 'kartu';
+      const sudah = sr.status === 'hadir' || sr.status === 'terlambat';
+      k.innerHTML = `<span class="label-kecil">${esc(sr.slot_nama)} · absen Anda</span>
+        <span class="kecil muted">${sudah ? `Kedatangan tercatat pukul ${esc(fmtJam(sr.jam))}${sr.jam_pulang ? `, pulang ${esc(fmtJam(sr.jam_pulang))}` : ''}.` : 'Pindai QR dari Petugas QR lain (bukan dari layar akun ini).'}</span>
+        <a class="btn btn-utama btn-kecil" style="width:auto" href="#/scan">Scan QR absen</a>`;
+      (el.querySelector('.isi') ?? el).appendChild(k);
+    } catch {}
+  };
+  kartuRaya();
   const offset = sesi.server_ms - Date.now();
   const kunci = await crypto.subtle.importKey('raw', dariB64url(sesi.kunci), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
 
