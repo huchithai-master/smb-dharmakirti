@@ -70,7 +70,7 @@ function kartuSesi(s, bisaScan, namaSaya) {
     <div class="kartu">
       <div class="baris-antara" style="align-items:flex-start">
         <div class="tumpuk" style="gap:4px">
-          <span class="slot-label ${s.status_slot === 'buka' ? '' : 'abu'}">${s.raya ? `${esc(s.slot_nama)} · Absen Kedatangan · ${fmtJam(s.scan_mulai)}` : `Slot ${esc(s.slot_nama)} · ${fmtJam(s.jam_mulai)}–${fmtJam(s.jam_selesai)}`}</span>
+          <span class="slot-label ${s.status_slot === 'buka' ? '' : 'abu'}">${s.raya ? `${esc(s.slot_nama)} <span class="jam">Absen Kedatangan ${fmtJam(s.scan_mulai)}</span>` : `Slot ${esc(s.slot_nama)} <span class="jam">${fmtJam(s.jam_mulai)}–${fmtJam(s.jam_selesai)}</span>`}</span>
           <span class="nama-kelas">${s.raya ? 'Semua pembina, asisten &amp; pengurus' : `Kelas ${esc(s.kelas_nama)}`}</span>
         </div>
         ${s.status === 'izin' ? `<span class="chip chip-izin">${JENIS_IZIN[s.izin_jenis] ?? 'Izin'}</span>` : chip(s.status)}
@@ -170,18 +170,23 @@ export async function riwayat(el, { query, ctx }) {
   };
   // Status kehadiran pengguna sendiri pada sesi/Hari Raya: hadir, terlambat, izin, alpa, atau belum absen.
   const statusSaya = (a) => {
-    const pulang = a.ada_pulang && a.jam_pulang ? `, pulang pukul <b>${fmtJam(a.jam_pulang)}</b>` : '';
-    if (a.status === 'hadir') return `<div class="info info-hijau">${ikon.centang(16)}<span>Anda hadir pukul <b>${fmtJam(a.jam)}</b>${pulang}.</span></div>`;
-    if (a.status === 'terlambat') return `<div class="info info-hijau">${ikon.centang(16)}<span>Anda tercatat terlambat pukul <b>${fmtJam(a.jam)}</b>${pulang}.</span></div>`;
-    if (a.status === 'izin') return `<div class="info info-oranye">${ikon.info()}<span>Anda izin${a.izin_jenis && JENIS_IZIN[a.izin_jenis] ? ` (${esc(JENIS_IZIN[a.izin_jenis])})` : ''}${a.izin_menunggu ? ', pengajuan masih menunggu persetujuan' : ''}.</span></div>`;
-    if (a.status === 'alpa') return `<div class="info info-merah">${ikon.info()}<span>Anda tidak hadir (alpa).</span></div>`;
-    return `<div class="info info-abu">${ikon.info()}<span>Anda belum absen.</span></div>`;
+    const blok = (kelas, judul, rinci = '') => `<div class="rw-status ${kelas}"><span class="rw-status-t">${judul}</span>${rinci ? `<span class="rw-status-k">${rinci}</span>` : ''}</div>`;
+    const rinciJam = (a) => `<span>Datang <b>${fmtJam(a.jam)}</b></span>${a.ada_pulang && a.jam_pulang ? `<span>Pulang <b>${fmtJam(a.jam_pulang)}</b></span>` : ''}`;
+    if (a.status === 'hadir') return blok('hadir', 'Anda Hadir', rinciJam(a));
+    if (a.status === 'terlambat') return blok('terlambat', 'Anda Terlambat', rinciJam(a));
+    if (a.status === 'izin') {
+      const sakit = a.izin_jenis === 'sakit';
+      const judul = `Anda ${a.izin_jenis === 'tugas' ? 'Tugas Lain' : sakit ? 'Sakit' : 'Izin'}`;
+      return blok(sakit ? 'sakit' : 'izin', judul, a.izin_menunggu ? 'Pengajuan menunggu persetujuan' : '');
+    }
+    if (a.status === 'alpa') return blok('alpa', 'Anda Alpa');
+    return blok('belum', 'Anda Belum Absen');
   };
   const kartuRaya = (s) => `
     <div class="kartu rw-k">
       <div class="rw-hd">
         <div class="tumpuk" style="min-width:0">
-          <span class="rw-slot">${esc(s.slot_nama)}${s.jam_mulai ? ' · ' + fmtJam(s.jam_mulai) : ''}</span>
+          <span class="rw-slot">${esc(s.slot_nama)}${s.jam_mulai ? `<span class="jam">${fmtJam(s.jam_mulai)}</span>` : ''}</span>
           <span class="rw-kn">Hari Raya</span>
         </div>
       </div>
@@ -191,7 +196,7 @@ export async function riwayat(el, { query, ctx }) {
     <div class="kartu rw-k">
       <div class="rw-hd">
         <div class="tumpuk" style="min-width:0">
-          <span class="rw-slot ${s.slot_nama === 'Pagi' ? '' : 'sg'}">${esc(s.slot_nama)}${s.jam_mulai ? ' · ' + fmtJam(s.jam_mulai) : ''}</span>
+          <span class="rw-slot ${s.slot_nama === 'Pagi' ? '' : 'sg'}">${esc(s.slot_nama)}${s.jam_mulai ? `<span class="jam">${fmtJam(s.jam_mulai)}</span>` : ''}</span>
           <span class="rw-kn">Kelas ${esc(s.kelas_nama)}</span>
         </div>
         <div class="rw-ring"><b>${s.total ? `${s.siswa.length}/${s.total}` : '–'}</b><i>hadir</i></div>
