@@ -161,9 +161,6 @@ export async function riwayat(el, { query, ctx }) {
     <div class="rw-o"><div class="rw-av ${peran === 'Asisten' ? 'as' : ''}">${esc(inisial(nama))}</div>
       <div class="tumpuk"><span class="rw-n">${esc(nama)}</span><span class="rw-r">${peran}</span></div></div>`;
   const kosongOrang = (peran) => `<div class="rw-o"><div class="rw-av as">–</div><div class="tumpuk"><span class="rw-n muted">Belum ada yang hadir</span><span class="rw-r">${peran}</span></div></div>`;
-  const labelBuka = (h, t) => `Lihat ${h} siswa hadir${t ? `, ${t} tidak hadir` : ''}`;
-  const STATUS_TIDAK = { izin: 'Izin', sakit: 'Sakit', alpa: 'Alpa' };
-  const barisSiswa = (x, no) => `<li><span class="rw-no">${no}</span><span class="rw-nm">${esc(x.nama)}</span>${x.status ? `<span class="rw-st ${x.status}">${STATUS_TIDAK[x.status] ?? esc(x.status)}</span>` : ''}${x.jk ? `<span class="rw-jk ${x.jk === 'L' ? 'l' : 'p'}">${x.jk}</span>` : ''}</li>`;
   const kpiGender = (daftar) => {
     const l = daftar.filter((x) => x.jk === 'L').length;
     const p = daftar.filter((x) => x.jk === 'P').length;
@@ -195,11 +192,10 @@ export async function riwayat(el, { query, ctx }) {
         ${(s.asisten.length ? s.asisten.map((n) => orang(n, 'Asisten')).join('') : '')}
       </div>
       <div class="rw-mat"><span class="rw-l">Materi</span><span class="rw-v ${s.materi ? '' : 'muted'}">${s.materi ? esc(s.materi) : 'Belum diisi'}</span></div>
-      ${s.siswa.length || s.tidak_hadir.length ? `
-        <button type="button" class="rw-btn" data-buka="${i}" data-n="${s.siswa.length}" data-t="${s.tidak_hadir.length}" aria-expanded="false"><span>${labelBuka(s.siswa.length, s.tidak_hadir.length)}</span>${ikon.bawah()}</button>
-        <div id="rw-c${i}" hidden>
-          ${s.siswa.length ? `${kpiGender(s.siswa)}<ol class="rw-daftar">${s.siswa.map((x, n) => barisSiswa(x, n + 1)).join('')}</ol>` : ''}
-          ${s.tidak_hadir.length ? `<div class="rw-sub">Tidak hadir (${s.tidak_hadir.length})</div><ol class="rw-daftar">${s.tidak_hadir.map((x, n) => barisSiswa(x, n + 1)).join('')}</ol>` : ''}
+      ${s.siswa.length ? `
+        <button type="button" class="rw-btn" data-buka="${i}" data-n="${s.siswa.length}" aria-expanded="false"><span>Lihat ${s.siswa.length} siswa yang hadir</span>${ikon.bawah()}</button>
+        <div id="rw-c${i}" hidden>${kpiGender(s.siswa)}
+          <ol class="rw-daftar">${s.siswa.map((x) => `<li><span class="rw-no">${s.siswa.indexOf(x) + 1}</span><span class="rw-nm">${esc(x.nama)}</span>${x.jk ? `<span class="rw-jk ${x.jk === 'L' ? 'l' : 'p'}">${x.jk}</span>` : ''}</li>`).join('')}</ol>
         </div>` : ''}
     </div>`;
   const tgl = [...new Set(d.sesi.map((s) => s.tanggal))];
@@ -223,7 +219,7 @@ export async function riwayat(el, { query, ctx }) {
     const buka = b.getAttribute('aria-expanded') !== 'true';
     b.setAttribute('aria-expanded', String(buka));
     el.querySelector(`#rw-c${b.dataset.buka}`).hidden = !buka;
-    b.firstElementChild.textContent = buka ? 'Sembunyikan daftar siswa' : labelBuka(b.dataset.n, Number(b.dataset.t));
+    b.firstElementChild.textContent = buka ? 'Sembunyikan daftar siswa' : `Lihat ${b.dataset.n} siswa yang hadir`;
   }));
 }
 
