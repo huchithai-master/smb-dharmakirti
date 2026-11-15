@@ -168,6 +168,15 @@ export async function riwayat(el, { query, ctx }) {
     const kartu = [['Laki-laki', l], ['Perempuan', p], ...(kosong ? [['Belum diisi', kosong]] : [])];
     return `<div class="stat-grid ${kosong ? 'tiga' : 'dua'}" style="margin-bottom:10px">${kartu.map(([ket, n]) => `<div class="stat"><b>${n}</b><span style="color:var(--utama)">${ket}</span></div>`).join('')}</div>`;
   };
+  // Status kehadiran pengguna sendiri pada sesi/Hari Raya: hadir, terlambat, izin, alpa, atau belum absen.
+  const statusSaya = (a) => {
+    const pulang = a.ada_pulang && a.jam_pulang ? `, pulang pukul <b>${fmtJam(a.jam_pulang)}</b>` : '';
+    if (a.status === 'hadir') return `<div class="info info-hijau">${ikon.centang(16)}<span>Anda hadir pukul <b>${fmtJam(a.jam)}</b>${pulang}.</span></div>`;
+    if (a.status === 'terlambat') return `<div class="info info-hijau">${ikon.centang(16)}<span>Anda tercatat terlambat pukul <b>${fmtJam(a.jam)}</b>${pulang}.</span></div>`;
+    if (a.status === 'izin') return `<div class="info info-oranye">${ikon.info()}<span>Anda izin${a.izin_jenis && JENIS_IZIN[a.izin_jenis] ? ` (${esc(JENIS_IZIN[a.izin_jenis])})` : ''}${a.izin_menunggu ? ', pengajuan masih menunggu persetujuan' : ''}.</span></div>`;
+    if (a.status === 'alpa') return `<div class="info info-merah">${ikon.info()}<span>Anda tidak hadir (alpa).</span></div>`;
+    return `<div class="info info-abu">${ikon.info()}<span>Anda belum absen.</span></div>`;
+  };
   const kartuRaya = (s) => `
     <div class="kartu rw-k">
       <div class="rw-hd">
@@ -176,7 +185,7 @@ export async function riwayat(el, { query, ctx }) {
           <span class="rw-kn">Hari Raya</span>
         </div>
       </div>
-      <div class="info info-hijau">${ikon.centang(16)}<span>Tercatat ${s.status === 'terlambat' ? 'terlambat' : 'hadir'} pukul <b>${fmtJam(s.jam)}</b>${s.ada_pulang && s.jam_pulang ? `, pulang pukul <b>${fmtJam(s.jam_pulang)}</b>` : ''}.</span></div>
+      ${statusSaya(s)}
     </div>`;
   const kartu = (s, i) => s.raya ? kartuRaya(s) : `
     <div class="kartu rw-k">
@@ -187,6 +196,7 @@ export async function riwayat(el, { query, ctx }) {
         </div>
         <div class="rw-ring"><b>${s.total ? `${s.siswa.length}/${s.total}` : '–'}</b><i>hadir</i></div>
       </div>
+      ${statusSaya(s.saya)}
       <div class="tumpuk" style="gap:8px">
         ${(s.pembina.length ? s.pembina.map((n) => orang(n, 'Pembina')).join('') : kosongOrang('Pembina'))}
         ${(s.asisten.length ? s.asisten.map((n) => orang(n, 'Asisten')).join('') : '')}
