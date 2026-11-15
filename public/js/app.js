@@ -186,7 +186,7 @@ async function render(opsi) {
     bersihkan = null;
   }
   app.classList.toggle('lebar', !!rute.lebar);
-  app.innerHTML = `${rute.polos ? '' : barDemo()}<main id="view" class="${rute.polos ? 'polos' : ''}"><div class="memuat">Memuat…</div></main>${
+  app.innerHTML = `${rute.polos ? '' : barDemo()}<main id="view" class="${rute.polos ? 'polos' : ''}"><div class="memuat" role="status" aria-label="Memuat"><span class="muat-logo"><img src="/icons/icon-192.png" alt=""></span></div></main>${
     rute.nav && ctx.me ? navBawah(navAktif(rute.nav)) : ''
   }`;
   const el = app.querySelector('#view');

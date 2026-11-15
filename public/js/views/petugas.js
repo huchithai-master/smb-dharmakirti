@@ -157,7 +157,7 @@ export async function petugas(el, { ctx, query }) {
 
   function progresHtml() {
     const p = st.progres;
-    if (!p) return '<div class="kosong">Memuat daftar…</div>';
+    if (!p) return '<div class="memuat kecil" role="status" aria-label="Memuat"><span class="muat-logo"><img src="/icons/icon-192.png" alt=""></span></div>';
     if (!p.kelas.length) return '<div class="kosong">Belum ada pengajar terjadwal di slot ini.</div>';
     const butuh = (k) => k.anggota.filter((a) => a.status !== 'izin');
     const sudah = (k) => butuh(k).filter((a) => a.status === 'hadir' || a.status === 'terlambat').length;

@@ -355,7 +355,7 @@ async function formKedua(wadah, d, query, ctx) {
         <button type="button" data-t="1" aria-pressed="false">Tetap setiap Minggu</button></div>
         <span class="kecil muted" id="ket-lingkup"></span></div>
     </div>
-    <div id="kandidat" class="tumpuk" style="gap:8px"><div class="kosong">Memuat calon…</div></div>
+    <div id="kandidat" class="tumpuk" style="gap:8px"><div class="memuat kecil" role="status" aria-label="Memuat"><span class="muat-logo"><img src="/icons/icon-192.png" alt=""></span></div></div>
     <button class="btn btn-utama" id="setujui" disabled>Pilih pembina dulu</button>`;
 
   const kandidatEl = wadah.querySelector('#kandidat');
@@ -371,7 +371,7 @@ async function formKedua(wadah, d, query, ctx) {
     pilihan = null;
     tombol.disabled = true;
     tombol.textContent = 'Pilih pembina dulu';
-    kandidatEl.innerHTML = '<div class="kosong">Memuat calon…</div>';
+    kandidatEl.innerHTML = '<div class="memuat kecil" role="status" aria-label="Memuat"><span class="muat-logo"><img src="/icons/icon-192.png" alt=""></span></div>';
     const k = await api(`/api/${P}/kandidat?${qs({ tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran: 'guru' })}`);
     const sala = (c) => !tetap || c.tipe === 'tetap';
     const grup = (judul, list) => {
@@ -445,7 +445,7 @@ async function formPengganti(wadah, d, query, ctx) {
       ${ganti ? `<div class="info info-ungu">${ikon.info()}<span>Menggantikan pengajar yang izin di kelas ini.</span></div>` : ''}
     </div>
     <div id="tim-kelas">${timKelas(d, kelasId, { ganti })}</div>
-    <div id="kandidat" class="tumpuk" style="gap:8px"><div class="kosong">Memuat calon…</div></div>
+    <div id="kandidat" class="tumpuk" style="gap:8px"><div class="memuat kecil" role="status" aria-label="Memuat"><span class="muat-logo"><img src="/icons/icon-192.png" alt=""></span></div></div>
     <button class="btn btn-utama" id="tugaskan" disabled>Pilih pengganti dulu</button>`;
 
   const kandidatEl = wadah.querySelector('#kandidat');
@@ -455,7 +455,7 @@ async function formPengganti(wadah, d, query, ctx) {
     pilihan = null;
     tombol.disabled = true;
     tombol.textContent = 'Pilih pengganti dulu';
-    kandidatEl.innerHTML = '<div class="kosong">Memuat calon…</div>';
+    kandidatEl.innerHTML = '<div class="memuat kecil" role="status" aria-label="Memuat"><span class="muat-logo"><img src="/icons/icon-192.png" alt=""></span></div>';
     const k = await api(`/api/${P}/kandidat?${qs({ tanggal: d.tanggal, slot_id: d.slot_id, kelas_id: kelasId, peran, menggantikan_id: ganti })}`);
     const grup = (judul, list) => list.length ? `<span class="label-kecil" style="margin-top:6px">${judul}</span>${list.map((c) => `
       <button class="opsi" data-calon="${c.pengguna_id}" data-nama="${esc(c.nama)}" aria-pressed="false">

@@ -54,7 +54,18 @@ h1, h2, h3 { margin: 0; }
 }
 #view { flex: 1; display: flex; flex-direction: column; padding-bottom: 8px; }
 #view.polos { padding-bottom: 0; }
-.memuat { padding: 48px 16px; text-align: center; color: var(--muted); }
+.memuat { padding: 64px 16px; display: flex; justify-content: center; }
+.memuat.kecil { padding: 24px 16px; }
+/* Logo berdenyut; muncul setelah 150 ms agar halaman yang cepat tidak berkedip. */
+.muat-logo { position: relative; width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; opacity: 0; animation: muat-muncul .2s ease .15s forwards; }
+.muat-logo img { width: 64px; height: 64px; border-radius: 22%; animation: muat-denyut 1.4s ease-in-out infinite; }
+.muat-logo::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; border: 2px solid var(--utama); animation: muat-cincin 1.4s ease-out infinite; }
+.memuat.kecil .muat-logo { width: 48px; height: 48px; }
+.memuat.kecil .muat-logo img { width: 40px; height: 40px; }
+@keyframes muat-muncul { to { opacity: 1; } }
+@keyframes muat-denyut { 0%, 100% { transform: scale(.92); opacity: .55; } 50% { transform: scale(1.06); opacity: 1; } }
+@keyframes muat-cincin { 0% { transform: scale(.9); opacity: .5; } 100% { transform: scale(1.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .muat-logo img, .muat-logo::after { animation: none; } }
 
 /* ---------- Header ---------- */
 .hdr {
