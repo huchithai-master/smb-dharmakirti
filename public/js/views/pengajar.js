@@ -161,6 +161,13 @@ export async function riwayat(el, { query, ctx }) {
     <div class="rw-o"><div class="rw-av ${peran === 'Asisten' ? 'as' : ''}">${esc(inisial(nama))}</div>
       <div class="tumpuk"><span class="rw-n">${esc(nama)}</span><span class="rw-r">${peran}</span></div></div>`;
   const kosongOrang = (peran) => `<div class="rw-o"><div class="rw-av as">–</div><div class="tumpuk"><span class="rw-n muted">Belum ada yang hadir</span><span class="rw-r">${peran}</span></div></div>`;
+  const kpiGender = (daftar) => {
+    const l = daftar.filter((x) => x.jk === 'L').length;
+    const p = daftar.filter((x) => x.jk === 'P').length;
+    const kosong = daftar.length - l - p;
+    const kartu = [['Laki-laki', l], ['Perempuan', p], ...(kosong ? [['Belum diisi', kosong]] : [])];
+    return `<div class="stat-grid ${kosong ? 'tiga' : 'dua'}" style="margin-bottom:10px">${kartu.map(([ket, n]) => `<div class="stat"><b>${n}</b><span style="color:var(--utama)">${ket}</span></div>`).join('')}</div>`;
+  };
   const kartuRaya = (s) => `
     <div class="kartu rw-k">
       <div class="rw-hd">
@@ -187,7 +194,9 @@ export async function riwayat(el, { query, ctx }) {
       <div class="rw-mat"><span class="rw-l">Materi</span><span class="rw-v ${s.materi ? '' : 'muted'}">${s.materi ? esc(s.materi) : 'Belum diisi'}</span></div>
       ${s.siswa.length ? `
         <button type="button" class="rw-btn" data-buka="${i}" data-n="${s.siswa.length}" aria-expanded="false"><span>Lihat ${s.siswa.length} siswa yang hadir</span>${ikon.bawah()}</button>
-        <div class="rw-chips" id="rw-c${i}" hidden>${s.siswa.map((n) => `<span>${esc(n)}</span>`).join('')}</div>` : ''}
+        <div id="rw-c${i}" hidden>${kpiGender(s.siswa)}
+          <ol class="rw-daftar">${s.siswa.map((x) => `<li><span class="rw-no">${s.siswa.indexOf(x) + 1}</span><span class="rw-nm">${esc(x.nama)}</span>${x.jk ? `<span class="rw-jk ${x.jk === 'L' ? 'l' : 'p'}">${x.jk}</span>` : ''}</li>`).join('')}</ol>
+        </div>` : ''}
     </div>`;
   const tgl = [...new Set(d.sesi.map((s) => s.tanggal))];
   el.innerHTML = `
