@@ -201,6 +201,10 @@ export async function riwayat(el, { query, ctx }) {
         ${(s.pembina.length ? s.pembina.map((n) => orang(n, 'Pembina')).join('') : kosongOrang('Pembina'))}
         ${(s.asisten.length ? s.asisten.map((n) => orang(n, 'Asisten')).join('') : '')}
       </div>
+      ${s.tidak_masuk?.length ? `<div class="rw-sub" style="margin:0">Tidak masuk (${s.tidak_masuk.length})</div>
+        <div class="tumpuk" style="gap:8px">${s.tidak_masuk.map((x) => `<div class="rw-o"><div class="rw-av ${x.peran === 'guru' ? '' : 'as'}">${esc(inisial(x.nama))}</div>
+          <div class="tumpuk"><span class="rw-n">${esc(x.nama)}</span><span class="rw-r">${x.peran === 'guru' ? 'Pembina' : 'Asisten'}</span></div>
+          <span class="rw-st ${x.status === 'izin' ? (x.jenis === 'sakit' ? 'sakit' : 'izin') : 'alpa'}" style="margin-left:auto">${x.status === 'izin' ? esc(JENIS_IZIN[x.jenis] ?? 'Izin') : 'Alpa'}</span></div>`).join('')}</div>` : ''}
       <div class="rw-mat"><span class="rw-l">Materi</span><span class="rw-v ${s.materi ? '' : 'muted'}">${s.materi ? esc(s.materi) : 'Belum diisi'}</span></div>
       ${s.siswa.length ? `
         <button type="button" class="rw-btn" data-buka="${i}" data-n="${s.siswa.length}" aria-expanded="false"><span>Lihat ${s.siswa.length} siswa yang hadir</span>${ikon.bawah()}</button>
