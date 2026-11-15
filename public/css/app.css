@@ -642,3 +642,8 @@ input.input[type="date"]:not(:focus):placeholder-shown::-webkit-datetime-edit { 
 .rw-jk { flex: none; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
 .rw-jk.l { background: #e4effb; color: #185fa5; }
 .rw-jk.p { background: #fbeaf0; color: #993556; }
+.rw-sub { margin: 12px 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.rw-st { flex: none; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: #eef0f2; color: #4a5560; }
+.rw-st.izin { background: #fdf1d9; color: #8a5a00; }
+.rw-st.sakit { background: #e4effb; color: #185fa5; }
+.rw-st.alpa { background: #fbe4e4; color: #a32d2d; }
