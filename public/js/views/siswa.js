@@ -160,6 +160,16 @@ export async function absenSiswa(el, { query, ctx }) {
 }
 
 // ---- Admin: data murid ----
+// Kartu ringkasan jenis kelamin; hanya menghitung murid aktif pada daftar yang sedang tampil (ikut pencarian dan filter kelas).
+function kartuGender(rows) {
+  const a = rows.filter((m) => m.aktif);
+  const l = a.filter((m) => m.jenis_kelamin === 'L').length;
+  const p = a.filter((m) => m.jenis_kelamin === 'P').length;
+  const kosong = a.length - l - p;
+  const kartu = [['Laki-laki', l], ['Perempuan', p], ...(kosong ? [['Belum diisi', kosong]] : [])];
+  return `<div class="stat-grid ${kosong ? 'tiga' : 'dua'}">${kartu.map(([ket, n]) => `<div class="stat"><b>${n}</b><span style="color:var(--utama)">${ket}</span></div>`).join('')}</div>`;
+}
+
 export async function daftarMurid(el, { ctx }) {
   const { murid, kelas } = await api('/api/admin/murid');
   let cari = '';
@@ -170,6 +180,7 @@ export async function daftarMurid(el, { ctx }) {
       <div class="baris"><a class="btn-kembali" href="${ctx.me.is_admin ? '#/admin/lainnya' : '#/kepala/lainnya'}" aria-label="Kembali">${ikon.kembali()}</a><h1>Data Murid</h1><a class="btn btn-netral btn-kecil" style="width:auto;margin-left:auto" href="#/admin/murid/impor">${ikon.unduh()} Impor Excel</a></div>
       <div style="padding:0 4px"><label class="sr-only" for="cari">Cari</label>
         <input class="input" id="cari" type="search" placeholder="Cari nama murid" style="background:#f7f8f9"></div>
+      <div id="gender" style="padding:0 4px"></div>
       <div class="chips" id="filter" style="padding:0 4px">
         <button data-k="0" aria-pressed="true">Semua (${murid.length})</button>
         ${kelas.map((k) => `<button data-k="${k.id}" aria-pressed="false">${esc(k.nama)} (${murid.filter((m) => m.kelas_id === k.id).length})</button>`).join('')}
@@ -182,6 +193,7 @@ export async function daftarMurid(el, { ctx }) {
   const tampil = () => {
     const q = cari.toLowerCase();
     const rows = murid.filter((m) => (!filter || m.kelas_id === filter) && (!q || m.nama.toLowerCase().includes(q)));
+    el.querySelector('#gender').innerHTML = kartuGender(rows);
     daftar.innerHTML = rows.length
       ? rows.map((m) => `
         <a class="item-link" href="#/admin/murid/${m.id}" style="${m.aktif ? '' : 'opacity:.6'}">
@@ -305,7 +317,8 @@ export async function muridPembina(el, { ctx }) {
         <button role="tab" data-t="arsip" aria-selected="false">Arsip (${jumlah(false)})</button>
       </div>
       <div style="padding:0 4px"><label class="sr-only" for="cari">Cari</label>
-        <input class="input" id="cari" type="search" placeholder="Cari nama murid" style="background:#f7f8f9"></div>` : ''}
+        <input class="input" id="cari" type="search" placeholder="Cari nama murid" style="background:#f7f8f9"></div>
+      <div id="gender" style="padding:0 4px"></div>` : ''}
       ${kelas.length > 1 ? `<div class="chips" id="filter" style="padding:0 4px">
         <button data-k="0" aria-pressed="true">Semua kelas</button>
         ${kelas.map((k) => `<button data-k="${k.id}" aria-pressed="false">${esc(k.nama)}</button>`).join('')}
@@ -319,6 +332,8 @@ export async function muridPembina(el, { ctx }) {
     const q = cari.toLowerCase();
     const aktif = tab === 'aktif';
     const rows = murid.filter((m) => m.aktif === aktif && (!filter || m.kelas_id === filter) && (!q || m.nama.toLowerCase().includes(q)));
+    const g = el.querySelector('#gender');
+    if (g) g.innerHTML = kartuGender(aktif ? rows : rows.map((m) => ({ ...m, aktif: true })));
     daftar.innerHTML = (aktif ? '' : `<div class="info info-abu">${ikon.info()}<span>Murid di arsip tidak muncul di absensi. Riwayat absensinya tetap tersimpan, dan murid bisa diaktifkan kembali kapan saja.</span></div>`) +
       (rows.length
         ? rows.map((m) => `
