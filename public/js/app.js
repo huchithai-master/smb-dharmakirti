@@ -39,7 +39,7 @@ const RUTE = [
   { path: '/murid/impor', view: impor.imporMurid, perlu: 'bisa_murid', nav: 'murid' },
   { path: '/murid/:id', view: siswa.formMuridPembina, perlu: 'bisa_murid', nav: 'murid' },
   { path: '/izin', view: pengajar.izin, perlu: 'is_pengajar', nav: 'izin' },
-  { path: '/riwayat', view: pengajar.riwayat, perlu: 'is_pengajar', nav: 'riwayat' },
+  { path: '/riwayat', view: pengajar.riwayat, perlu: 'bisa_riwayat', nav: 'riwayat' },
   { path: '/notifikasi', view: notif.notifikasi, perlu: 'login' },
   { path: '/akun', view: pengajar.akun, perlu: 'login', nav: 'akun' },
   { path: '/petugas', view: petugas.petugas, perlu: 'is_petugas', nav: 'petugas' },
@@ -113,6 +113,8 @@ function navBawah(aktif) {
     item.push(['riwayat', '#/riwayat', ikon.jam(), 'Riwayat']);
     item.push(['izin', '#/izin', ikon.dokumen(), 'Izin']);
   }
+  // Non-pengajar yang ikut Hari Raya (petugas QR, pengurus) juga punya Riwayat untuk kehadiran Hari Raya mereka.
+  if (!m.is_pengajar && m.bisa_riwayat) item.push(['riwayat', '#/riwayat', ikon.jam(), 'Riwayat']);
   if (m.is_petugas) item.push(['petugas', '#/petugas', ikon.qr(), 'Petugas QR']);
   if (m.is_kepala) item.push(['kepala', '#/kepala', ikon.dokumen(), 'Kepala SMB']);
   if (m.is_wakil) item.push(['wakil', '#/wakil', ikon.dokumen(), 'Wakil']);

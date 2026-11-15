@@ -149,7 +149,7 @@ export async function beranda(el, { ctx }) {
   return () => clearInterval(segar);
 }
 
-export async function riwayat(el, { query }) {
+export async function riwayat(el, { query, ctx }) {
   const d = await api(`/api/riwayat/sesi${query.bulan ? '?bulan=' + encodeURIComponent(query.bulan) : ''}`);
   const geser = (n) => {
     const [y, m] = d.bulan.split('-').map(Number);
@@ -161,7 +161,17 @@ export async function riwayat(el, { query }) {
     <div class="rw-o"><div class="rw-av ${peran === 'Asisten' ? 'as' : ''}">${esc(inisial(nama))}</div>
       <div class="tumpuk"><span class="rw-n">${esc(nama)}</span><span class="rw-r">${peran}</span></div></div>`;
   const kosongOrang = (peran) => `<div class="rw-o"><div class="rw-av as">–</div><div class="tumpuk"><span class="rw-n muted">Belum ada yang hadir</span><span class="rw-r">${peran}</span></div></div>`;
-  const kartu = (s, i) => `
+  const kartuRaya = (s) => `
+    <div class="kartu rw-k">
+      <div class="rw-hd">
+        <div class="tumpuk" style="min-width:0">
+          <span class="rw-slot">${esc(s.slot_nama)}${s.jam_mulai ? ' · ' + fmtJam(s.jam_mulai) : ''}</span>
+          <span class="rw-kn">Hari Raya</span>
+        </div>
+      </div>
+      <div class="info info-hijau">${ikon.centang(16)}<span>Tercatat ${s.status === 'terlambat' ? 'terlambat' : 'hadir'} pukul <b>${fmtJam(s.jam)}</b>${s.ada_pulang && s.jam_pulang ? `, pulang pukul <b>${fmtJam(s.jam_pulang)}</b>` : ''}.</span></div>
+    </div>`;
+  const kartu = (s, i) => s.raya ? kartuRaya(s) : `
     <div class="kartu rw-k">
       <div class="rw-hd">
         <div class="tumpuk" style="min-width:0">
@@ -183,7 +193,7 @@ export async function riwayat(el, { query }) {
   el.innerHTML = `
     <div class="hdr-putih"><div class="baris"><div class="tumpuk" style="padding-left:8px">
       <h1 style="padding-left:0">Riwayat</h1>
-      <span class="kecil muted">Sesi kelas Anda</span>
+      <span class="kecil muted">${ctx.me.is_pengajar ? 'Sesi kelas Anda' : 'Kehadiran Hari Raya Anda'}</span>
     </div></div></div>
     <div class="isi">
       <div class="baris-antara" style="gap:8px">
@@ -194,7 +204,7 @@ export async function riwayat(el, { query }) {
       ${tgl.length ? tgl.map((t) => {
         const hari = d.sesi.map((s, i) => [s, i]).filter(([s]) => s.tanggal === t);
         return `<div class="baris-antara"><h2 class="judul-seksi" style="margin:0">${esc(fmtTanggal(t))}</h2><span class="kecil muted">${hari.length} sesi</span></div>${hari.map(([s, i]) => kartu(s, i)).join('')}`;
-      }).join('') : '<div class="kartu"><div class="kosong" style="padding:16px">Belum ada sesi di bulan ini.</div></div>'}
+      }).join('') : `<div class="kartu"><div class="kosong" style="padding:16px">${ctx.me.is_pengajar ? 'Belum ada sesi di bulan ini.' : 'Belum ada kehadiran Hari Raya di bulan ini.'}</div></div>`}
     </div>`;
   el.querySelectorAll('[data-buka]').forEach((b) => b.addEventListener('click', () => {
     const buka = b.getAttribute('aria-expanded') !== 'true';
