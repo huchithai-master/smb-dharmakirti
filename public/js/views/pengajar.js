@@ -172,15 +172,15 @@ export async function riwayat(el, { query, ctx }) {
   const statusSaya = (a) => {
     const blok = (kelas, judul, rinci = '') => `<div class="rw-status ${kelas}"><span class="rw-status-t">${judul}</span>${rinci ? `<span class="rw-status-k">${rinci}</span>` : ''}</div>`;
     const rinciJam = (a) => `<span>Datang <b>${fmtJam(a.jam)}</b></span>${a.ada_pulang && a.jam_pulang ? `<span>Pulang <b>${fmtJam(a.jam_pulang)}</b></span>` : ''}`;
-    if (a.status === 'hadir') return blok('hadir', 'Anda Hadir', rinciJam(a));
-    if (a.status === 'terlambat') return blok('terlambat', 'Anda Terlambat', rinciJam(a));
+    if (a.status === 'hadir') return blok('hadir', 'Hadir', rinciJam(a));
+    if (a.status === 'terlambat') return blok('terlambat', 'Terlambat', rinciJam(a));
     if (a.status === 'izin') {
       const sakit = a.izin_jenis === 'sakit';
-      const judul = `Anda ${a.izin_jenis === 'tugas' ? 'Tugas Lain' : sakit ? 'Sakit' : 'Izin'}`;
+      const judul = a.izin_jenis === 'tugas' ? 'Tugas Lain' : sakit ? 'Sakit' : 'Izin';
       return blok(sakit ? 'sakit' : 'izin', judul, a.izin_menunggu ? 'Pengajuan menunggu persetujuan' : '');
     }
-    if (a.status === 'alpa') return blok('alpa', 'Anda Alpa');
-    return blok('belum', 'Anda Belum Absen');
+    if (a.status === 'alpa') return blok('alpa', 'Alpa');
+    return blok('belum', 'Belum Absen');
   };
   const kartuRaya = (s) => `
     <div class="kartu rw-k">
