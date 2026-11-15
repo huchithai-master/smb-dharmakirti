@@ -3,7 +3,7 @@
   "buildCommand": null,
   "outputDirectory": "public",
   "regions": [
-    "dub1"
+    "icn1"
   ],
   "functions": {
     "api/**/*.js": {
