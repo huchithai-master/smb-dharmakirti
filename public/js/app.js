@@ -175,6 +175,15 @@ async function render(opsi) {
         if (typeof hasil === 'function') hasil();
         return;
       }
+      // Gambar (logo header) disiapkan dulu sebelum layar diganti, supaya tidak berkedip saat penyegaran otomatis.
+      await Promise.race([
+        Promise.all([...baru.querySelectorAll('img')].map((g) => (g.decode ? g.decode().catch(() => {}) : null))),
+        new Promise((r) => setTimeout(r, 800)),
+      ]);
+      if (nomor !== nomorRender || !viewLama.isConnected) {
+        if (typeof hasil === 'function') hasil();
+        return;
+      }
       if (bersihkan) { try { bersihkan(); } catch { /* abaikan */ } }
       bersihkan = hasil || null;
       viewLama.replaceWith(baru);
